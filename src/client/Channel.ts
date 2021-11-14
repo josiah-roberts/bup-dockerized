@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { ClientCommandType, ServerMessage, ServerMessageType } from "../types/ClientCommand";
+import { ClientCommandType, ServerMessage, ServerMessageType } from "../types/commands";
 
 export type Channel = {
   send(command: ClientCommandType): void,

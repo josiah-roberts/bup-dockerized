@@ -1,65 +1,66 @@
-import { WebSocketServer } from 'ws';
-import { createServer } from 'http';
-import { Socket } from 'net';
-import serveHandler from 'serve-handler';
-import { spawn } from 'child_process';
-import type { ClientCommandType } from '../types/ClientCommand';
-import 'source-map-support/register'
-import { checkEnv } from './check-env';
+import { WebSocketServer, WebSocket } from "ws";
+import { createServer } from "http";
+import { Socket } from "net";
+import serveHandler from "serve-handler";
+import type { ClientCommand, ClientCommandType } from "../types/commands";
+import "source-map-support/register";
+import { checkEnv } from "./check-env";
+import { MessageContainer, messageHandlers } from "./message-handlers";
 
-const port = 1234 as const;
+const port = 80 as const;
 
-checkEnv('BACKUPS_DIR');
-checkEnv('CONFIG_DIR');
+console.info("\nStarting application...");
 
-const server = createServer();
-const wss = new WebSocketServer({ noServer: true });
+checkEnv("BACKUPS_DIR")
+  .then(() => checkEnv("CONFIG_DIR"))
+  .then(() => {
+    console.info("\nStarting servers...");
+    const server = createServer();
+    const wss = new WebSocketServer({ noServer: true });
 
-wss.on('connection', function connection(ws) {
-  ws.on('message', function incoming(message) {
-    setTimeout(() => {
-      console.log('received: %s', message);
+    wss.on("connection", function connection(ws) {
+      console.info("WS connected");
 
-      const parsed = JSON.parse(String(message)) as ClientCommandType;
-      console.log(parsed);
+      const baseSend = ws.send.bind(ws);
+      ws.send = ((...args: Parameters<typeof ws.send>) => {
+        console.info("WS send: %s", args[0]);
+        return baseSend(...args);
+      }) as typeof ws.send;
 
-      if (parsed.type === 'ping') {
-        console.log("DOING IT");
-        spawn('ping', ['-c', '5', 'google.com']).stdout.on('data', (data) => {
-          ws.send(JSON.stringify({ type: 'ping-text', message: data.toString() }));
-        }).on('end', () => {
-          ws.send(JSON.stringify({ type: 'ping-text', message: 'That\'s it' }));
+      ws.on("message", function incoming(message, isBinary) {
+        console.info("WS message: %s", message);
+
+        const parsed = JSON.parse(String(message)) as ClientCommandType;
+        const handler = messageHandlers[parsed.type] as unknown as (
+          incoming: MessageContainer<typeof parsed.type>,
+          ws: WebSocket,
+          wss: WebSocketServer
+        ) => void;
+        handler({ message: parsed, rawMessage: message, isBinary }, ws, wss);
+      });
+
+      ws.send(
+        JSON.stringify({ type: "ping", message: "Welcome to the server" })
+      );
+    });
+
+    server
+      .on("upgrade", (request, socket, head) => {
+        if (request.url === "/ws") {
+          wss.handleUpgrade(request, socket as Socket, head, (ws) => {
+            wss.emit("connection", ws, request);
+          });
+        }
+      })
+      .on("request", async (req, res) => {
+        serveHandler(req, res, {
+          public: "./dist/static",
+          directoryListing: false,
         })
-      }
-
-      if (parsed.type === 'echo') {
-        ws.send(JSON.stringify({ type: 'echo-text', message: parsed.message }));
-      }
-
-      if (parsed.type === 'bup-help') {
-        const emitter = spawn('bup', ['help']);
-        emitter.stdout.on('data', (data) => {
-          ws.send(JSON.stringify({ type: 'ping-text', message: data.toString() }));
-        }).on('end', () => {
-          ws.send(JSON.stringify({ type: 'ping-text', message: 'That\'s bup helpful, yeah' }));
-        });
-        emitter.stderr.on('data', (e) => console.error(e.toString()));
-      }
-    }, 3000);
+          .then(() => console.info("%s static %s", res.statusCode, req.url))
+          .catch((e) => console.error(e));
+      })
+      .listen(port, () => {
+        console.log("HTTP + WS server is hosted on *:%s\n", port);
+      });
   });
-
-  ws.send(JSON.stringify({ type: 'ping-text', message: 'Welcome to the server' }));
-});
-
-server.on('upgrade', (request, socket, head) => {
-  if (request.url === '/ws') {
-    wss.handleUpgrade(request, socket as Socket, head, (ws) => {
-      wss.emit('connection', ws, request);
-    })
-  }
-}).on('request', async (req, res) => {
-  console.log("req")
-  serveHandler(req, res, { public: './dist/static', directoryListing: false }).catch(e => console.log(e));
-}).listen(port, () => {
-  console.log("Server is hosted on *:%s", port);
-});

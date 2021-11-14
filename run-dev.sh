@@ -8,6 +8,6 @@ sudo docker run -it --rm \
   -e CONFIG_DIR=/system-config \
   -v `pwd`/bup-dev-config:/system-config \
   -v `pwd`/src:/usr/app/src \
-  -p 8080:1234 \
+  -p 8080:80 \
   --name bup-dev-watch \
   bup-dev npm run dev
