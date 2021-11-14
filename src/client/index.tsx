@@ -1,29 +1,36 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
-import { makeChannel, Channel } from './Channel';
+import { makeChannel, Channel, ChannelContext } from './Channel';
 import './index.css'
+import { useClosed } from './useClosed';
+import { useOpened } from './useOpened';
+import { usePublish } from './usePublish';
+import { useSubscription } from './useSubscription';
 
-const ChannelContext = createContext<Channel | undefined>(undefined);
 
 const LeComp = () => {
-  const channel = useContext(ChannelContext);
+  const ping = usePublish('ping');
+  const echo = usePublish('echo');
+  const bupHelp = usePublish('bup-help');
+
   const [messages, setMessages] = useState<string[]>([]);
 
-  useEffect(() => {
-    channel?.opened(() => {
-      channel?.send({ type: 'ping' });
-    });
-    channel?.subscribe('ping-text', (e) => {
-      setMessages(existing => [...existing, e.message]);
-      if (e.message === "That's it") {
-        channel.send({ type: 'echo', message: 'Please send this back to me' });
-      }
-    });
-    channel?.subscribe('echo-text', (e) => {
-      setMessages(existing => [...existing, `ECHO: ${e.message}`]);
-      channel.send({ type: 'bup-help' });
-    });
-  }, [channel, setMessages])
+
+  useClosed(() => setMessages(m => [...m, 'yo it closed, fuck']));
+
+  useOpened(() => ping());
+
+  useSubscription('ping-text', useCallback((e) => {
+    setMessages(existing => [...existing, e.message]);
+    if (e.message === "That's it") {
+      echo({ message: 'Please send this back to me' });
+    }
+  }, [setMessages, echo]));
+  useSubscription('echo-text', useCallback((e) => {
+    setMessages(existing => [...existing, `ECHO: ${e.message}`]);
+    bupHelp();
+  }, [setMessages, bupHelp]))
+
   return <div>
     {messages.map(m => <li key={m}>{m}</li>)}
   </div>
