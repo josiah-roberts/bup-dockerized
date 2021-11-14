@@ -16,20 +16,23 @@ const LeComp = () => {
   const [messages, setMessages] = useState<string[]>([]);
 
 
-  useClosed(() => setMessages(m => [...m, 'yo it closed, fuck']));
+  useClosed(() => {
+    setMessages(m => [...m, 'yo it closed, fuck']);
+    setTimeout(() => location.reload(), 500);
+  });
 
   useOpened(() => ping());
 
-  useSubscription('ping-text', useCallback((e) => {
+  useSubscription('ping-text', (e) => {
     setMessages(existing => [...existing, e.message]);
     if (e.message === "That's it") {
       echo({ message: 'Please send this back to me' });
     }
-  }, [setMessages, echo]));
-  useSubscription('echo-text', useCallback((e) => {
+  });
+  useSubscription('echo-text', (e) => {
     setMessages(existing => [...existing, `ECHO: ${e.message}`]);
     bupHelp();
-  }, [setMessages, bupHelp]))
+  });
 
   return <div>
     {messages.map(m => <li key={m}>{m}</li>)}

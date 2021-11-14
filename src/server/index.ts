@@ -5,6 +5,12 @@ import serveHandler from 'serve-handler';
 import { spawn } from 'child_process';
 import type { ClientCommandType } from '../types/ClientCommand';
 import 'source-map-support/register'
+import { checkEnv } from './check-env';
+
+const port = 1234 as const;
+
+checkEnv('BACKUPS_DIR');
+checkEnv('CONFIG_DIR');
 
 const server = createServer();
 const wss = new WebSocketServer({ noServer: true });
@@ -54,6 +60,6 @@ server.on('upgrade', (request, socket, head) => {
 }).on('request', async (req, res) => {
   console.log("req")
   serveHandler(req, res, { public: './dist/static', directoryListing: false }).catch(e => console.log(e));
-}).listen(1234, () => {
-  console.log("Server is hosted on 8080");
+}).listen(port, () => {
+  console.log("Server is hosted on *:%s", port);
 });
