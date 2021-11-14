@@ -1,22 +1,25 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { makeChannel, Channel } from './Channel';
 import './index.css'
 
-const LeComp = ({ channel }: { channel: Channel }) => {
+const ChannelContext = createContext<Channel | undefined>(undefined);
+
+const LeComp = () => {
+  const channel = useContext(ChannelContext);
   const [messages, setMessages] = useState<string[]>([]);
 
   useEffect(() => {
-    channel.opened(() => {
-      channel.send({ type: 'ping' });
+    channel?.opened(() => {
+      channel?.send({ type: 'ping' });
     });
-    channel.subscribe('ping-text', (e) => {
+    channel?.subscribe('ping-text', (e) => {
       setMessages(existing => [...existing, e.message]);
       if (e.message === "That's it") {
         channel.send({ type: 'echo', message: 'Please send this back to me' });
       }
     });
-    channel.subscribe('echo-text', (e) => {
+    channel?.subscribe('echo-text', (e) => {
       setMessages(existing => [...existing, `ECHO: ${e.message}`]);
       channel.send({ type: 'bup-help' });
     });
@@ -37,7 +40,9 @@ const Application = () => {
 
   return <div>
     <h1>Hello dockerized Bois!</h1>
-    {channel && <LeComp channel={channel} />}
+    <ChannelContext.Provider value={channel}>
+      <LeComp />
+    </ChannelContext.Provider>
   </div>
 }
 
