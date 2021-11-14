@@ -8,7 +8,9 @@
     "build": "NODE_ENV=production webpack",
     "watch-client": "NODE_ENV=development webpack --watch",
     "build-server": "tsc --project src/server/tsconfig.json",
-    "watch-server": "concurrently \"tsc --watch --project src/server/tsconfig.json\" \"npx nodemon dist/server/index.js\""
+    "watch-server": "concurrently \"tsc --watch --project src/server/tsconfig.json\" \"npx nodemon dist/server/index.js\"",
+    "dev": "concurrently \"npm run watch-client\" \"npm run watch-server\"",
+    "docker-dev": ". ./run-dev.sh"
   },
   "author": "",
   "license": "ISC",

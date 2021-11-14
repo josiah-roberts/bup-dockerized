@@ -36,7 +36,7 @@ const Application = () => {
   }, [channel]);
 
   return <div>
-    <h1>Hello Bois!</h1>
+    <h1>Hello dockerized Bois!</h1>
     {channel && <LeComp channel={channel} />}
   </div>
 }

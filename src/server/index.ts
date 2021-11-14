@@ -34,7 +34,7 @@ wss.on('connection', function connection(ws) {
       emitter.stdout.on('data', (data) => {
         ws.send(JSON.stringify({ type: 'ping-text', message: data.toString() }));
       }).on('end', () => {
-        ws.send(JSON.stringify({ type: 'ping-text', message: 'That\'s bup help, yeah' }));
+        ws.send(JSON.stringify({ type: 'ping-text', message: 'That\'s bup helpful, yeah' }));
       });
       emitter.stderr.on('data', (e) => console.error(e.toString()));
     }
