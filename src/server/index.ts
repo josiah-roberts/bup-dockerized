@@ -30,11 +30,13 @@ wss.on('connection', function connection(ws) {
     }
 
     if (parsed.type === 'bup-help') {
-      spawn('npm', ['help']).stdout.on('data', (data) => {
+      const emitter = spawn('bup', ['help']);
+      emitter.stdout.on('data', (data) => {
         ws.send(JSON.stringify({ type: 'ping-text', message: data.toString() }));
       }).on('end', () => {
-        ws.send(JSON.stringify({ type: 'ping-text', message: 'That\'s npm help, actually' }));
-      })
+        ws.send(JSON.stringify({ type: 'ping-text', message: 'That\'s bup help, yeah' }));
+      });
+      emitter.stderr.on('data', (e) => console.error(e.toString()));
     }
   });
 
