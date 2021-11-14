@@ -4,7 +4,7 @@
   "description": "",
   "main": "bin/index.js",
   "scripts": {
-    "start": "webpack serve --port 3000",
+    "start": "node dist/server/index.js",
     "build": "NODE_ENV=production webpack",
     "watch-client": "NODE_ENV=development webpack --watch",
     "build-server": "tsc --project src/server/tsconfig.json",

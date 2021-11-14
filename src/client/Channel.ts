@@ -8,7 +8,7 @@ export type Channel = {
 }
 
 export function makeChannel(): Channel {
-  const socket = new WebSocket('ws://localhost:1234/ws');
+  const socket = new WebSocket('ws://localhost:8080/ws');
   return {
     send(command) {
       socket.send(JSON.stringify(command));
