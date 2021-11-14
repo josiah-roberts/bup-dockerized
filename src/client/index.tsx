@@ -18,6 +18,7 @@ const LeComp = ({ channel }: { channel: Channel }) => {
     });
     channel.subscribe('echo-text', (e) => {
       setMessages(existing => [...existing, `ECHO: ${e.message}`]);
+      channel.send({ type: 'bup-help' });
     });
   }, [channel, setMessages])
   return <div>

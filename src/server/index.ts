@@ -28,6 +28,14 @@ wss.on('connection', function connection(ws) {
     if (parsed.type === 'echo') {
       ws.send(JSON.stringify({ type: 'echo-text', message: parsed.message }));
     }
+
+    if (parsed.type === 'bup-help') {
+      spawn('npm', ['help']).stdout.on('data', (data) => {
+        ws.send(JSON.stringify({ type: 'ping-text', message: data.toString() }));
+      }).on('end', () => {
+        ws.send(JSON.stringify({ type: 'ping-text', message: 'That\'s npm help, actually' }));
+      })
+    }
   });
 
   ws.send('Welcome to the server');
