@@ -17,7 +17,7 @@ wss.on('connection', function connection(ws) {
     console.log(parsed);
 
     if (parsed.type === 'ping') {
-      console.log("DOING IT")
+      console.log("DOING IT");
       spawn('ping', ['-c', '5', 'google.com']).stdout.on('data', (data) => {
         ws.send(JSON.stringify({ type: 'ping-text', message: data.toString() }));
       }).on('end', () => {

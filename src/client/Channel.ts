@@ -25,7 +25,7 @@ export function makeChannel(): Channel {
       socket.addEventListener('open', handler);
     },
     closed(handler) {
-      socket.addEventListener('close', handler)
+      socket.addEventListener('close', handler);
     }
   }
 }
