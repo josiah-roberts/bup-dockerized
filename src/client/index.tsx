@@ -12,38 +12,83 @@ import { useClosed } from "./useClosed";
 import { useOpened } from "./useOpened";
 import { useCommand } from "./useCommand";
 import { useSubscription } from "./useSubscription";
+import { BackupDefinition } from "../types/backup-definition";
 
 const LeComp = () => {
-  const ping = useCommand("ping");
-  const echo = useCommand("echo");
-  const bupHelp = useCommand("bup-help");
+  const getBackups = useCommand("get-backups");
+  const ls = useCommand("ls");
+  const addBackup = useCommand("add-backup");
 
-  const [messages, setMessages] = useState<string[]>([]);
+  const [backups, setBackups] = useState<BackupDefinition[]>([]);
+  const [lsItems, setLsItems] = useState<string[]>([]);
+  const [newBackupName, setNewBackupName] = useState<string>("");
+  const [newBackupSources, setNewBackupSources] = useState<string>("");
 
+  useOpened(() => getBackups());
   useClosed(() => {
-    setMessages((m) => [...m, "yo it closed, fuck damn"]);
     setTimeout(() => location.reload(), 500);
   });
 
-  useOpened(() => ping());
-
-  useSubscription("ping", (e) => {
-    setMessages((existing) => [...existing, e.message]);
-    if (e.message === "That's it") {
-      echo({ message: "Please send this back to me" });
-    }
+  useSubscription("get-backups", ({ backups }) => {
+    setBackups(backups);
   });
-  useSubscription("echo", (e) => {
-    setMessages((existing) => [...existing, `ECHO: ${e.message}`]);
-    bupHelp();
+  useSubscription("add-backup", ({ error }) => {
+    if (error) alert(error);
+    else getBackups();
+  });
+  useSubscription("ls", ({ items }) => {
+    setLsItems(items);
   });
 
   return (
-    <div>
-      {messages.map((m) => (
-        <li key={m}>{m}</li>
-      ))}
-    </div>
+    <>
+      <div>
+        <ul>
+          <input
+            type="text"
+            placeholder="name"
+            onChange={(e) => setNewBackupName(e.target.value)}
+            value={newBackupName}
+          />
+          <input
+            type="text"
+            placeholder="comma-separated sources"
+            onChange={(e) => setNewBackupSources(e.target.value)}
+            value={newBackupSources}
+          />
+          <button
+            onClick={() =>
+              addBackup({
+                definition: {
+                  name: newBackupName,
+                  sources: newBackupSources.split(","),
+                },
+              })
+            }
+          >
+            Add backup
+          </button>
+          {backups.map(({ name, sources }) => (
+            <li key={name}>
+              {name}: {sources.join(" ")}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <button onClick={() => ls({ path: "/" })}>Start a new LS</button>
+        <ul>
+          {lsItems.map((item) => (
+            <li
+              style={{ cursor: "pointer" }}
+              onClick={() => ls({ path: item })}
+            >
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
   );
 };
 

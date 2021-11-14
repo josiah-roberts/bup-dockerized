@@ -11,4 +11,4 @@ docker run -it --rm \
   -v `pwd`/src:/usr/app/src \
   -p 8080:80 \
   --name bup-dev-watch \
-  bup-dev npm run dev
+  bup-dev
