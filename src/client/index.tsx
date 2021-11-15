@@ -12,29 +12,34 @@ import { useClosed } from "./useClosed";
 import { useOpened } from "./useOpened";
 import { useCommand } from "./useCommand";
 import { useSubscription } from "./useSubscription";
-import { BackupDefinition } from "../types/backup-definition";
+import { Backup } from "../types/config";
 
 const LeComp = () => {
-  const getBackups = useCommand("get-backups");
+  const getBackups0 = useCommand("get-backups", ({ backups }) => {
+    console.log(0);
+    setBackups(backups);
+  });
+  const getBackups1 = useCommand("get-backups", ({ backups }) => {
+    console.log(1);
+    setBackups(backups);
+  });
+
   const ls = useCommand("ls");
   const addBackup = useCommand("add-backup");
 
-  const [backups, setBackups] = useState<BackupDefinition[]>([]);
+  const [backups, setBackups] = useState<Backup[]>([]);
   const [lsItems, setLsItems] = useState<string[]>([]);
   const [newBackupName, setNewBackupName] = useState<string>("");
   const [newBackupSources, setNewBackupSources] = useState<string>("");
 
-  useOpened(() => getBackups());
+  useOpened(() => getBackups0());
   useClosed(() => {
     setTimeout(() => location.reload(), 500);
   });
 
-  useSubscription("get-backups", ({ backups }) => {
-    setBackups(backups);
-  });
   useSubscription("add-backup", ({ error }) => {
     if (error) alert(error);
-    else getBackups();
+    else getBackups0();
   });
   useSubscription("ls", ({ items }) => {
     setLsItems(items);
@@ -59,9 +64,11 @@ const LeComp = () => {
           <button
             onClick={() =>
               addBackup({
-                definition: {
+                backup: {
                   name: newBackupName,
                   sources: newBackupSources.split(","),
+                  cronLine: "* * * * *",
+                  repository: "default",
                 },
               })
             }

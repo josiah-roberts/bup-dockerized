@@ -1,4 +1,4 @@
-import { BackupDefinition } from "./backup-definition";
+import { Backup } from "./config";
 
 export type ClientCommandType =
   | {
@@ -11,7 +11,7 @@ export type ClientCommandType =
       type: "ls";
       path: string;
     }
-  | { type: "add-backup"; definition: BackupDefinition };
+  | { type: "add-backup"; backup: Backup };
 export type ClientCommand<TKey extends ClientCommandType["type"]> = Exclude<
   ClientCommandType,
   { type: Exclude<ClientCommandType["type"], TKey> }
@@ -20,7 +20,7 @@ export type ClientCommand<TKey extends ClientCommandType["type"]> = Exclude<
 export type ServerMessageType =
   | {
       type: "get-backups";
-      backups: BackupDefinition[];
+      backups: Backup[];
     }
   | {
       type: "ls";
@@ -36,6 +36,6 @@ export type ServerMessage<TKey extends ServerMessageType["type"]> = Exclude<
 >;
 
 export type ServerMessageHandler<TKey extends ServerMessageType["type"]> = (
-  message: ServerMessage<TKey>,
+  message: ServerMessage<TKey> & { correlation?: string },
   event: MessageEvent
 ) => void;

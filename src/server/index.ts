@@ -6,6 +6,7 @@ import type { ClientCommand, ClientCommandType } from "../types/commands";
 import "source-map-support/register";
 import { checkEnv } from "./check-env";
 import { MessageContainer, messageHandlers } from "./message-handlers";
+import { addShutdownTask } from "./shutdown";
 
 const port = 80 as const;
 

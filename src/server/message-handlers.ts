@@ -6,10 +6,11 @@ import {
   ServerMessageType,
 } from "../types/commands";
 import { spawn, exec } from "child_process";
-import { BackupDefinition } from "../types/backup-definition";
+import { Backup } from "../types/config";
+import { getConfig, setConfig } from "./config-repository";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
-  message: ClientCommand<T>;
+  message: ClientCommand<T> & { correlation?: string };
   rawMessage: RawData;
   isBinary: boolean;
 };
@@ -17,12 +18,10 @@ export type MessageContainer<T extends ClientCommandType["type"]> = {
 function send<T extends ServerMessageType["type"]>(
   ws: WebSocket,
   type: T,
-  message: Omit<ServerMessage<T>, "type">
+  message: Omit<ServerMessage<T>, "type"> & { correlation?: string }
 ) {
   ws.send(JSON.stringify({ type, ...message }, undefined, 2));
 }
-
-const backups: BackupDefinition[] = [];
 
 export const messageHandlers: {
   [k in ClientCommandType["type"]]: (
@@ -46,16 +45,23 @@ export const messageHandlers: {
       ws.send(JSON.stringify({ type: "ping", message: data.toString() }));
     });
   },
-  "get-backups": (_, ws) => {
-    send(ws, "get-backups", { backups });
+  "get-backups": async ({ message }, ws) => {
+    send(ws, "get-backups", {
+      correlation: message.correlation,
+      backups: (await getConfig()).backups,
+    });
   },
-  "add-backup": ({ message }, ws) => {
-    if (backups.some((x) => x.name === message.definition.name)) {
+  "add-backup": async ({ message }, ws) => {
+    const config = await getConfig();
+    if (config.backups.some((x) => x.name === message.backup.name)) {
       send(ws, "add-backup", {
-        error: `${message.definition.name} already exists`,
+        error: `${message.backup.name} already exists`,
       });
     } else {
-      backups.push(message.definition);
+      await setConfig({
+        ...config,
+        backups: [...config.backups, message.backup],
+      });
       send(ws, "add-backup", {});
     }
   },
