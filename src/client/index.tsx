@@ -1,68 +1,45 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { makeChannel, Channel, ChannelContext } from "./Channel";
 import "./index.css";
 import { useClosed } from "./useClosed";
 import { useOpened } from "./useOpened";
 import { useCommand } from "./useCommand";
-import { useSubscription } from "./useSubscription";
 import { Backup } from "../types/config";
+import { ServerMessage } from "../types/commands";
 
 const LeComp = () => {
-  const [getBackups0] = useCommand("get-backups", ({ backups }) => {
-    console.log(0);
-    setBackups(backups);
-  });
-  const [getBackups1] = useCommand("get-backups", ({ backups }) => {
-    console.log(1);
-    setBackups(backups);
-  });
-
-  const [ls, lsKey] = useCommand("ls");
-  const [ls2, lsKey2] = useCommand("ls");
-  const [addBackup] = useCommand("add-backup");
-
-  console.log({ lsKey, lsKey2 });
-
   const [backups, setBackups] = useState<Backup[]>([]);
-  const [lsItems, setLsItems] = useState<string[]>([]);
   const [newBackupName, setNewBackupName] = useState<string>("");
   const [newBackupSources, setNewBackupSources] = useState<string>("");
 
+  const [getBackups] = useCommand(
+    "get-backups",
+    useCallback(
+      ({ backups }) => {
+        setBackups(backups);
+      },
+      [setBackups]
+    )
+  );
+
+  const reloadBackups = useCallback(
+    ({ error }: ServerMessage<"add-backup" | "remove-backup">) => {
+      if (error) alert(error);
+      else getBackups();
+    },
+    [getBackups]
+  );
+
+  const [addBackup] = useCommand("add-backup", reloadBackups);
+  const [removeBackup] = useCommand("remove-backup", reloadBackups);
+
   useOpened(() => {
-    getBackups0();
-    ls2({ path: "/var" });
+    getBackups();
   });
   useClosed(() => {
     setTimeout(() => location.reload(), 500);
   });
-
-  useSubscription("add-backup", ({ error }) => {
-    if (error) alert(error);
-    else getBackups0();
-  });
-
-  useSubscription(
-    "ls",
-    ({ items }) => {
-      setLsItems(items);
-    },
-    lsKey
-  );
-
-  useSubscription(
-    "ls",
-    ({ items }) => {
-      console.log("other ls");
-    },
-    lsKey2
-  );
 
   return (
     <>
@@ -97,19 +74,12 @@ const LeComp = () => {
           {backups.map(({ name, sources }) => (
             <li key={name}>
               {name}: {sources.join(" ")}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div>
-        <button onClick={() => ls({ path: "/" })}>Start a new LS</button>
-        <ul>
-          {lsItems.map((item) => (
-            <li
-              style={{ cursor: "pointer" }}
-              onClick={() => ls({ path: item })}
-            >
-              {item}
+              <button
+                type="button"
+                onClick={() => removeBackup({ backupName: name })}
+              >
+                Delete
+              </button>
             </li>
           ))}
         </ul>

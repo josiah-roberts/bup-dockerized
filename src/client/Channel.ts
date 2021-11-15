@@ -18,18 +18,22 @@ export type Channel = {
 
 export function makeChannel(): Channel {
   const socket = new WebSocket("ws://localhost:8080/ws");
+  socket.addEventListener("message", (ev) => {
+    console.info("Recieved %s", String(ev.data));
+  });
+
   return {
     send(command) {
       socket.send(JSON.stringify(command));
     },
-    subscribe(key, handler, correlation) {
+    subscribe(type, handler, correlation) {
+      console.log("Subscribed to %s %s", type, correlation);
       const wrappedHandler = (ev: MessageEvent<any>) => {
         try {
           const deserialized = JSON.parse(String(ev.data)) as ServerMessageType;
-          if (
-            deserialized.type === key &&
-            (!correlation || correlation === deserialized.correlation)
-          ) {
+
+          if (deserialized.type !== type) return;
+          if (!correlation || correlation === deserialized.correlation) {
             handler(deserialized as Parameters<typeof handler>[0], ev);
           }
         } catch (e) {

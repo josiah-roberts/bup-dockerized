@@ -44,7 +44,7 @@ export const useCommand = <TKey extends ClientCommandType["type"]>(
           ...(commandArgs[0] ?? {}),
         } as ClientCommandType);
       },
-      [channel]
+      [channel, type, correlation]
     ),
     correlation,
   ];

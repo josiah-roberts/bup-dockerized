@@ -12,6 +12,7 @@ export type ClientCommandType = (
       path: string;
     }
   | { type: "add-backup"; backup: Backup }
+  | { type: "remove-backup"; backupName: string }
 ) & { correlation: string };
 export type ClientCommand<TKey extends ClientCommandType["type"]> = Exclude<
   ClientCommandType,
@@ -29,6 +30,10 @@ export type ServerMessageType = (
     }
   | {
       type: "add-backup";
+      error?: string;
+    }
+  | {
+      type: "remove-backup";
       error?: string;
     }
 ) & { correlation?: string };

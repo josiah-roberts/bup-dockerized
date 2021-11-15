@@ -13,6 +13,7 @@
     "target": "esnext",
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "./src/server",
   ]
 }

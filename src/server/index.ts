@@ -7,6 +7,7 @@ import "source-map-support/register";
 import { checkEnv } from "./check-env";
 import { MessageContainer, messageHandlers } from "./message-handlers";
 import { addShutdownTask } from "./shutdown";
+import { withCorrelation } from "./correlation";
 
 const port = 80 as const;
 
@@ -32,12 +33,15 @@ checkEnv("BACKUPS_DIR")
         console.info("WS message: %s", message);
 
         const parsed = JSON.parse(String(message)) as ClientCommandType;
-        const handler = messageHandlers[parsed.type] as unknown as (
-          incoming: MessageContainer<typeof parsed.type>,
-          ws: WebSocket,
-          wss: WebSocketServer
-        ) => void;
-        handler({ message: parsed, rawMessage: message, isBinary }, ws, wss);
+
+        withCorrelation(parsed.correlation, () => {
+          const handler = messageHandlers[parsed.type] as unknown as (
+            incoming: MessageContainer<typeof parsed.type>,
+            ws: WebSocket,
+            wss: WebSocketServer
+          ) => void;
+          handler({ message: parsed, rawMessage: message, isBinary }, ws, wss);
+        });
       });
     });
 

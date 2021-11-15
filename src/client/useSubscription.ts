@@ -10,7 +10,6 @@ export const useSubscription = <TKey extends ServerMessageType["type"]>(
   const channel = useContext(ChannelContext);
   useEffect(() => {
     if (channel) {
-      console.log("Subscribed to %s", type);
       return channel.subscribe(type, handler, correlation);
     }
   }, [channel, handler]);

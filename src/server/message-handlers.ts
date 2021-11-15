@@ -6,8 +6,8 @@ import {
   ServerMessageType,
 } from "../types/commands";
 import { spawn, exec } from "child_process";
-import { Backup } from "../types/config";
 import { getConfig, setConfig } from "./config-repository";
+import { getAnyCorrelation } from "./correlation";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
   message: ClientCommand<T>;
@@ -18,9 +18,10 @@ export type MessageContainer<T extends ClientCommandType["type"]> = {
 function send<T extends ServerMessageType["type"]>(
   ws: WebSocket,
   type: T,
-  message: Omit<ServerMessage<T>, "type">
+  message: Omit<ServerMessage<T>, "type" | "correlation">
 ) {
-  ws.send(JSON.stringify({ type, ...message }, undefined, 2));
+  const correlation = getAnyCorrelation();
+  ws.send(JSON.stringify({ type, correlation, ...message }, undefined, 2));
 }
 
 export const messageHandlers: {
@@ -47,7 +48,6 @@ export const messageHandlers: {
   },
   "get-backups": async ({ message }, ws) => {
     send(ws, "get-backups", {
-      correlation: message.correlation,
       backups: (await getConfig()).backups,
     });
   },
@@ -62,7 +62,22 @@ export const messageHandlers: {
         ...config,
         backups: [...config.backups, message.backup],
       });
-      send(ws, "add-backup", { correlation: message.correlation });
+      send(ws, "add-backup", {});
+    }
+  },
+  "remove-backup": async ({ message }, ws) => {
+    const config = await getConfig();
+    const backup = config.backups.find((x) => x.name === message.backupName);
+    if (!backup) {
+      send(ws, "remove-backup", {
+        error: `${message.backupName} does not exist exists`,
+      });
+    } else {
+      await setConfig({
+        ...config,
+        backups: config.backups.filter((x) => x !== backup),
+      });
+      send(ws, "remove-backup", {});
     }
   },
   ls: ({ message }, ws) => {
@@ -72,7 +87,6 @@ export const messageHandlers: {
       (e, stdout, stderr) => {
         if (!e && !stderr) {
           send(ws, "ls", {
-            correlation: message.correlation,
             items: stdout
               .split("\n")
               .map((i) => `${message.path === "/" ? "" : message.path}/${i}`),
