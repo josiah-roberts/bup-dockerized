@@ -41,33 +41,33 @@ export const Form = () => {
   return (
     <>
       <div>
+        <input
+          type="text"
+          placeholder="name"
+          onChange={(e) => setNewBackupName(e.target.value)}
+          value={newBackupName}
+        />
+        <input
+          type="text"
+          placeholder="comma-separated sources"
+          onChange={(e) => setNewBackupSources(e.target.value)}
+          value={newBackupSources}
+        />
+        <button
+          onClick={() =>
+            addBackup({
+              backup: {
+                name: newBackupName,
+                sources: newBackupSources.split(","),
+                cronLine: "* * * * *",
+                repository: "default",
+              },
+            })
+          }
+        >
+          Add backup
+        </button>
         <ul>
-          <input
-            type="text"
-            placeholder="name"
-            onChange={(e) => setNewBackupName(e.target.value)}
-            value={newBackupName}
-          />
-          <input
-            type="text"
-            placeholder="comma-separated sources"
-            onChange={(e) => setNewBackupSources(e.target.value)}
-            value={newBackupSources}
-          />
-          <button
-            onClick={() =>
-              addBackup({
-                backup: {
-                  name: newBackupName,
-                  sources: newBackupSources.split(","),
-                  cronLine: "* * * * *",
-                  repository: "default",
-                },
-              })
-            }
-          >
-            Add backup
-          </button>
           {backups.map(({ name, sources }) => (
             <li key={name}>
               {name}: {sources.join(" ")}

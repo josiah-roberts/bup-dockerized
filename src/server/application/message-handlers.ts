@@ -9,6 +9,7 @@ import { spawn, exec } from "child_process";
 import { getConfig, setConfig } from "./config-repository";
 import { getAnyCorrelation } from "../utils/correlation";
 import { DistributiveOmit } from "../../types/util";
+import { isEmpty, isNil } from "ramda";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
   message: ClientCommand<T>;
@@ -53,18 +54,26 @@ export const messageHandlers: {
     });
   },
   "add-backup": async ({ message }, ws) => {
+    if (isEmpty(message.backup.name) || isEmpty(message.backup.sources)) {
+      send(ws, "add-backup", {
+        error: `Missing required info`,
+      });
+      return;
+    }
+
     const config = await getConfig();
     if (config.backups.some((x) => x.name === message.backup.name)) {
       send(ws, "add-backup", {
         error: `${message.backup.name} already exists`,
       });
-    } else {
-      await setConfig({
-        ...config,
-        backups: [...config.backups, message.backup],
-      });
-      send(ws, "add-backup", { backup: message.backup });
+      return;
     }
+
+    await setConfig({
+      ...config,
+      backups: [...config.backups, message.backup],
+    });
+    send(ws, "add-backup", { backup: message.backup });
   },
   "remove-backup": async ({ message }, ws) => {
     const config = await getConfig();
