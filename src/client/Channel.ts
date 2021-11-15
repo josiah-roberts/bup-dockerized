@@ -24,20 +24,20 @@ export function makeChannel(): Channel {
 
   return {
     send(command) {
-      socket.send(JSON.stringify(command));
+      const json = JSON.stringify(command);
+      console.info("Sent %s", json);
+      socket.send(json);
     },
     subscribe(type, handler, correlation) {
       console.log("Subscribed to %s %s", type, correlation);
       const wrappedHandler = (ev: MessageEvent<any>) => {
-        try {
-          const deserialized = JSON.parse(String(ev.data)) as ServerMessageType;
+        const deserialized = JSON.parse(String(ev.data)) as ServerMessageType;
 
-          if (deserialized.type !== type) return;
-          if (!correlation || correlation === deserialized.correlation) {
-            handler(deserialized as Parameters<typeof handler>[0], ev);
-          }
-        } catch (e) {
-          console.log("Threw error deserializing", ev, e);
+        if (
+          deserialized.type === type &&
+          (!correlation || deserialized.correlation === correlation)
+        ) {
+          handler(deserialized as Parameters<typeof handler>[0], ev);
         }
       };
       socket.addEventListener("message", wrappedHandler);
