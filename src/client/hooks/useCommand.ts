@@ -5,9 +5,9 @@ import {
   ClientCommand,
   ServerMessageType,
   ServerMessageHandler,
-} from "../types/commands";
-import { DistributiveOmit } from "../types/util";
-import { ChannelContext } from "./Channel";
+} from "../../types/commands";
+import { DistributiveOmit } from "../../types/util";
+import { ChannelContext } from "../Channel";
 import { useSubscription } from "./useSubscription";
 
 type CommandArg<TKey extends ClientCommandType["type"]> =

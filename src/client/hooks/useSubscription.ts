@@ -1,6 +1,6 @@
 import { useContext, useEffect } from "react";
-import { ServerMessageHandler, ServerMessageType } from "../types/commands";
-import { ChannelContext } from "./Channel";
+import { ServerMessageHandler, ServerMessageType } from "../../types/commands";
+import { ChannelContext } from "../Channel";
 
 export const useSubscription = <TKey extends ServerMessageType["type"]>(
   type: TKey,
