@@ -19,7 +19,7 @@ function send<T extends ServerMessageType["type"]>(
   type: T,
   message: Omit<ServerMessage<T>, "type">
 ) {
-  ws.send(JSON.stringify({ ...message, type }));
+  ws.send(JSON.stringify({ type, ...message }, undefined, 2));
 }
 
 const backups: BackupDefinition[] = [];
@@ -31,28 +31,6 @@ export const messageHandlers: {
     wss: WebSocketServer
   ) => void;
 } = {
-  ping: (_, ws) => {
-    ws.send(JSON.stringify({ type: "ping", message: "Pinging google..." }));
-    spawn("ping", ["-c", "5", "google.com"])
-      .stdout.on("data", (data) => {
-        if (String(data).includes("bytes from")) {
-          ws.send(JSON.stringify({ type: "ping", message: "Got a response" }));
-        } else {
-          ws.send(
-            JSON.stringify({
-              type: "ping",
-              message: data.toString(),
-            })
-          );
-        }
-      })
-      .on("end", () => {
-        ws.send(JSON.stringify({ type: "ping", message: "That's it" }));
-      });
-  },
-  echo: ({ message }, ws) => {
-    ws.send(JSON.stringify({ type: "echo", message: message.message }));
-  },
   "bup-help": (_, ws) => {
     const emitter = spawn("bup", ["help"]);
     emitter.stdout

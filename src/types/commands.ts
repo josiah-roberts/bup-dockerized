@@ -2,14 +2,7 @@ import { BackupDefinition } from "./backup-definition";
 
 export type ClientCommandType =
   | {
-      type: "ping";
-    }
-  | {
       type: "bup-help";
-    }
-  | {
-      type: "echo";
-      message: string;
     }
   | {
       type: "get-backups";
@@ -25,14 +18,6 @@ export type ClientCommand<TKey extends ClientCommandType["type"]> = Exclude<
 >;
 
 export type ServerMessageType =
-  | {
-      type: "ping";
-      message: string;
-    }
-  | {
-      type: "echo";
-      message: string;
-    }
   | {
       type: "get-backups";
       backups: BackupDefinition[];

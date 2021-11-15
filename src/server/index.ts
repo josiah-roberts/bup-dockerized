@@ -38,10 +38,6 @@ checkEnv("BACKUPS_DIR")
         ) => void;
         handler({ message: parsed, rawMessage: message, isBinary }, ws, wss);
       });
-
-      ws.send(
-        JSON.stringify({ type: "ping", message: "Welcome to the server" })
-      );
     });
 
     server

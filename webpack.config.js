@@ -13,7 +13,7 @@ module.exports = {
     rules: [
       {
         test: /\.(ts|tsx)$/,
-        exclude: /node_modules/,
+        exclude: [/node_modules/, /src\/server/],
         resolve: {
           extensions: ['.ts', '.tsx', '.js', '.json'],
         },
@@ -32,4 +32,8 @@ module.exports = {
     }),
     new MiniCssExtractPlugin(),
   ],
+  externals: {
+    'react': 'React',
+    'react-dom': 'ReactDOM'
+  }
 };
