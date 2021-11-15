@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { useCallback, useContext } from "react";
+import { useCallback, useContext, useMemo } from "react";
 import {
   ClientCommandType,
   ClientCommand,
@@ -11,10 +11,10 @@ import { useSubscription } from "./useSubscription";
 
 type CommandArg<TKey extends ClientCommandType["type"]> = {} extends Omit<
   ClientCommand<TKey>,
-  "type"
+  "type" | "correlation"
 >
   ? []
-  : [Omit<ClientCommand<TKey>, "type">];
+  : [Omit<ClientCommand<TKey>, "type" | "correlation">];
 
 type HookArgs<TKey extends ClientCommandType["type"]> =
   TKey extends ServerMessageType["type"]
@@ -23,27 +23,29 @@ type HookArgs<TKey extends ClientCommandType["type"]> =
 
 export const useCommand = <TKey extends ClientCommandType["type"]>(
   ...[type, replyHandler]: HookArgs<TKey>
-) => {
+): [(...comandArgs: CommandArg<TKey>) => void, string] => {
   const channel = useContext(ChannelContext);
-  const correlation = replyHandler ? nanoid() : undefined;
+  const correlation = useMemo(() => nanoid(), [type, replyHandler]);
 
   useSubscription(
     (replyHandler ? type : "noop") as ServerMessageType["type"],
-    (message, event) => {
-      if (message.correlation && message.correlation === correlation) {
-        (replyHandler as any)?.(message, event);
-      }
-    }
+    (replyHandler ?? (() => {})) as ServerMessageHandler<
+      ServerMessageType["type"]
+    >,
+    correlation
   );
 
-  return useCallback(
-    (...commandArgs: CommandArg<TKey>) => {
-      channel?.send({
-        type,
-        correlation,
-        ...(commandArgs[0] ?? {}),
-      } as ClientCommandType);
-    },
-    [channel]
-  );
+  return [
+    useCallback(
+      (...commandArgs: CommandArg<TKey>) => {
+        channel?.send({
+          type,
+          correlation,
+          ...(commandArgs[0] ?? {}),
+        } as ClientCommandType);
+      },
+      [channel]
+    ),
+    correlation,
+  ];
 };

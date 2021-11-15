@@ -15,24 +15,30 @@ import { useSubscription } from "./useSubscription";
 import { Backup } from "../types/config";
 
 const LeComp = () => {
-  const getBackups0 = useCommand("get-backups", ({ backups }) => {
+  const [getBackups0] = useCommand("get-backups", ({ backups }) => {
     console.log(0);
     setBackups(backups);
   });
-  const getBackups1 = useCommand("get-backups", ({ backups }) => {
+  const [getBackups1] = useCommand("get-backups", ({ backups }) => {
     console.log(1);
     setBackups(backups);
   });
 
-  const ls = useCommand("ls");
-  const addBackup = useCommand("add-backup");
+  const [ls, lsKey] = useCommand("ls");
+  const [ls2, lsKey2] = useCommand("ls");
+  const [addBackup] = useCommand("add-backup");
+
+  console.log({ lsKey, lsKey2 });
 
   const [backups, setBackups] = useState<Backup[]>([]);
   const [lsItems, setLsItems] = useState<string[]>([]);
   const [newBackupName, setNewBackupName] = useState<string>("");
   const [newBackupSources, setNewBackupSources] = useState<string>("");
 
-  useOpened(() => getBackups0());
+  useOpened(() => {
+    getBackups0();
+    ls2({ path: "/var" });
+  });
   useClosed(() => {
     setTimeout(() => location.reload(), 500);
   });
@@ -41,9 +47,22 @@ const LeComp = () => {
     if (error) alert(error);
     else getBackups0();
   });
-  useSubscription("ls", ({ items }) => {
-    setLsItems(items);
-  });
+
+  useSubscription(
+    "ls",
+    ({ items }) => {
+      setLsItems(items);
+    },
+    lsKey
+  );
+
+  useSubscription(
+    "ls",
+    ({ items }) => {
+      console.log("other ls");
+    },
+    lsKey2
+  );
 
   return (
     <>

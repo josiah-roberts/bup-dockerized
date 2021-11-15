@@ -10,7 +10,7 @@ import { Backup } from "../types/config";
 import { getConfig, setConfig } from "./config-repository";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
-  message: ClientCommand<T> & { correlation?: string };
+  message: ClientCommand<T>;
   rawMessage: RawData;
   isBinary: boolean;
 };
@@ -18,7 +18,7 @@ export type MessageContainer<T extends ClientCommandType["type"]> = {
 function send<T extends ServerMessageType["type"]>(
   ws: WebSocket,
   type: T,
-  message: Omit<ServerMessage<T>, "type"> & { correlation?: string }
+  message: Omit<ServerMessage<T>, "type">
 ) {
   ws.send(JSON.stringify({ type, ...message }, undefined, 2));
 }
@@ -62,7 +62,7 @@ export const messageHandlers: {
         ...config,
         backups: [...config.backups, message.backup],
       });
-      send(ws, "add-backup", {});
+      send(ws, "add-backup", { correlation: message.correlation });
     }
   },
   ls: ({ message }, ws) => {
@@ -72,6 +72,7 @@ export const messageHandlers: {
       (e, stdout, stderr) => {
         if (!e && !stderr) {
           send(ws, "ls", {
+            correlation: message.correlation,
             items: stdout
               .split("\n")
               .map((i) => `${message.path === "/" ? "" : message.path}/${i}`),
