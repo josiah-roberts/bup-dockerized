@@ -4,10 +4,11 @@ import {
   ClientCommandType,
   ServerMessage,
   ServerMessageType,
-} from "../types/commands";
+} from "../../types/commands";
 import { spawn, exec } from "child_process";
 import { getConfig, setConfig } from "./config-repository";
-import { getAnyCorrelation } from "./correlation";
+import { getAnyCorrelation } from "../utils/correlation";
+import { DistributiveOmit } from "../../types/util";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
   message: ClientCommand<T>;
@@ -18,7 +19,7 @@ export type MessageContainer<T extends ClientCommandType["type"]> = {
 function send<T extends ServerMessageType["type"]>(
   ws: WebSocket,
   type: T,
-  message: Omit<ServerMessage<T>, "type" | "correlation">
+  message: DistributiveOmit<ServerMessage<T>, "type" | "correlation">
 ) {
   const correlation = getAnyCorrelation();
   ws.send(JSON.stringify({ type, correlation, ...message }, undefined, 2));
@@ -62,7 +63,7 @@ export const messageHandlers: {
         ...config,
         backups: [...config.backups, message.backup],
       });
-      send(ws, "add-backup", {});
+      send(ws, "add-backup", { backup: message.backup });
     }
   },
   "remove-backup": async ({ message }, ws) => {

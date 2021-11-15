@@ -1,8 +1,8 @@
 import { readFile, writeFile } from "fs/promises";
 import { once } from "ramda";
 import assert from "assert";
-import { Config } from "../types/config";
-import { addShutdownTask } from "./shutdown";
+import { Config } from "../../types/config";
+import { addShutdownTask } from "../utils/shutdown";
 
 const defaultConfig = (): Config => ({
   repositories: [{ name: "default" }],

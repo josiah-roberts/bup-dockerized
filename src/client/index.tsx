@@ -24,8 +24,8 @@ const LeComp = () => {
   );
 
   const reloadBackups = useCallback(
-    ({ error }: ServerMessage<"add-backup" | "remove-backup">) => {
-      if (error) alert(error);
+    (msg: ServerMessage<"add-backup" | "remove-backup">) => {
+      if ("error" in msg) alert(msg.error);
       else getBackups();
     },
     [getBackups]

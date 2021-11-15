@@ -1,13 +1,8 @@
-import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
-import { Socket } from "net";
-import serveHandler from "serve-handler";
-import type { ClientCommand, ClientCommandType } from "../types/commands";
 import "source-map-support/register";
-import { checkEnv } from "./check-env";
-import { MessageContainer, messageHandlers } from "./message-handlers";
-import { addShutdownTask } from "./shutdown";
-import { withCorrelation } from "./correlation";
+import { checkEnv } from "./utils/check-env";
+import { createWsServer, wsUpgradeHandler } from "./network/websockets";
+import { staticHandler } from "./network/static";
 
 const port = 80 as const;
 
@@ -18,49 +13,11 @@ checkEnv("BACKUPS_DIR")
   .then(() => {
     console.info("\nStarting servers...");
     const server = createServer();
-    const wss = new WebSocketServer({ noServer: true });
-
-    wss.on("connection", function connection(ws) {
-      console.info("WS connected");
-
-      const baseSend = ws.send.bind(ws);
-      ws.send = ((...args: Parameters<typeof ws.send>) => {
-        console.info("WS send: %s", args[0]);
-        return baseSend(...args);
-      }) as typeof ws.send;
-
-      ws.on("message", function incoming(message, isBinary) {
-        console.info("WS message: %s", message);
-
-        const parsed = JSON.parse(String(message)) as ClientCommandType;
-
-        withCorrelation(parsed.correlation, () => {
-          const handler = messageHandlers[parsed.type] as unknown as (
-            incoming: MessageContainer<typeof parsed.type>,
-            ws: WebSocket,
-            wss: WebSocketServer
-          ) => void;
-          handler({ message: parsed, rawMessage: message, isBinary }, ws, wss);
-        });
-      });
-    });
+    const wss = createWsServer();
 
     server
-      .on("upgrade", (request, socket, head) => {
-        if (request.url === "/ws") {
-          wss.handleUpgrade(request, socket as Socket, head, (ws) => {
-            wss.emit("connection", ws, request);
-          });
-        }
-      })
-      .on("request", async (req, res) => {
-        serveHandler(req, res, {
-          public: "./dist/static",
-          directoryListing: false,
-        })
-          .then(() => console.info("%s static %s", res.statusCode, req.url))
-          .catch((e) => console.error(e));
-      })
+      .on("upgrade", wsUpgradeHandler(wss))
+      .on("request", staticHandler)
       .listen(port, () => {
         console.log("HTTP + WS server is hosted on *:%s\n", port);
       });

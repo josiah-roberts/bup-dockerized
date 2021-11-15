@@ -6,15 +6,14 @@ import {
   ServerMessageType,
   ServerMessageHandler,
 } from "../types/commands";
+import { DistributiveOmit } from "../types/util";
 import { ChannelContext } from "./Channel";
 import { useSubscription } from "./useSubscription";
 
-type CommandArg<TKey extends ClientCommandType["type"]> = {} extends Omit<
-  ClientCommand<TKey>,
-  "type" | "correlation"
->
-  ? []
-  : [Omit<ClientCommand<TKey>, "type" | "correlation">];
+type CommandArg<TKey extends ClientCommandType["type"]> =
+  {} extends DistributiveOmit<ClientCommand<TKey>, "type" | "correlation">
+    ? []
+    : [DistributiveOmit<ClientCommand<TKey>, "type" | "correlation">];
 
 type HookArgs<TKey extends ClientCommandType["type"]> =
   TKey extends ServerMessageType["type"]
