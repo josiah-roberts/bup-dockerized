@@ -1,11 +1,11 @@
-import { Backup } from "./config";
+import { Backup, Config } from "./config";
 
 export type ClientCommandType = (
   | {
       type: "bup-help";
     }
   | {
-      type: "get-backups";
+      type: "get-config";
     }
   | {
       type: "ls";
@@ -19,9 +19,9 @@ export type ClientCommand<TKey extends ClientCommandType["type"]> = Exclude<
   { type: Exclude<ClientCommandType["type"], TKey> }
 >;
 
-type GetBackupsMessage = {
-  type: "get-backups";
-  backups: Backup[];
+type GetConfigMessage = {
+  type: "get-config";
+  config: Config;
 };
 type LsMessage = {
   type: "ls";
@@ -43,7 +43,7 @@ type RemoveBackupMessage =
     };
 
 export type ServerMessageType = { correlation?: string } & (
-  | GetBackupsMessage
+  | GetConfigMessage
   | LsMessage
   | AddBackupMessage
   | RemoveBackupMessage

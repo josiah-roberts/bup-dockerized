@@ -10,6 +10,7 @@ import { getConfig, setConfig } from "./config-repository";
 import { getAnyCorrelation } from "../utils/correlation";
 import { DistributiveOmit } from "../../types/util";
 import { isEmpty, isNil } from "ramda";
+import { parseExpression } from "cron-parser";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
   message: ClientCommand<T>;
@@ -24,6 +25,15 @@ function send<T extends ServerMessageType["type"]>(
 ) {
   const correlation = getAnyCorrelation();
   ws.send(JSON.stringify({ type, correlation, ...message }, undefined, 2));
+}
+
+function cronIsValid(cronLine: string) {
+  try {
+    parseExpression(cronLine);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export const messageHandlers: {
@@ -48,15 +58,22 @@ export const messageHandlers: {
       ws.send(JSON.stringify({ type: "ping", message: data.toString() }));
     });
   },
-  "get-backups": async ({ message }, ws) => {
-    send(ws, "get-backups", {
-      backups: (await getConfig()).backups,
+  "get-config": async (_, ws) => {
+    send(ws, "get-config", {
+      config: await getConfig(),
     });
   },
   "add-backup": async ({ message }, ws) => {
     if (isEmpty(message.backup.name) || isEmpty(message.backup.sources)) {
       send(ws, "add-backup", {
         error: `Missing required info`,
+      });
+      return;
+    }
+
+    if (!cronIsValid(message.backup.cronLine)) {
+      send(ws, "add-backup", {
+        error: `Invalid cron line`,
       });
       return;
     }

@@ -1,4 +1,5 @@
 import React from "react";
+import "./application.css";
 import { useEffect, useState } from "react";
 import { Channel, ChannelContext, makeChannel } from "../Channel";
 import { Form } from "./Form";

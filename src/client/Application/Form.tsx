@@ -2,37 +2,39 @@ import React, { useCallback, useState } from "react";
 import { useClosed } from "../hooks/useClosed";
 import { useOpened } from "../hooks/useOpened";
 import { useCommand } from "../hooks/useCommand";
-import { Backup } from "../../types/config";
+import { Backup, Config } from "../../types/config";
 import { ServerMessage } from "../../types/commands";
+import { Status } from "./Status";
 
 export const Form = () => {
-  const [backups, setBackups] = useState<Backup[]>([]);
+  const [config, setConfig] = useState<Config>();
   const [newBackupName, setNewBackupName] = useState<string>("");
   const [newBackupSources, setNewBackupSources] = useState<string>("");
+  const [newBackupCronLine, setNewBackupCronLine] = useState<string>("");
 
-  const [getBackups] = useCommand(
-    "get-backups",
+  const [getConfig] = useCommand(
+    "get-config",
     useCallback(
-      ({ backups }) => {
-        setBackups(backups);
+      ({ config }: ServerMessage<"get-config">) => {
+        setConfig(config);
       },
-      [setBackups]
+      [setConfig]
     )
   );
 
   const reloadBackups = useCallback(
     (msg: ServerMessage<"add-backup" | "remove-backup">) => {
       if ("error" in msg) alert(msg.error);
-      else getBackups();
+      else getConfig();
     },
-    [getBackups]
+    [getConfig]
   );
 
   const [addBackup] = useCommand("add-backup", reloadBackups);
   const [removeBackup] = useCommand("remove-backup", reloadBackups);
 
   useOpened(() => {
-    getBackups();
+    getConfig();
   });
   useClosed(() => {
     setTimeout(() => location.reload(), 500);
@@ -40,6 +42,7 @@ export const Form = () => {
 
   return (
     <>
+      {config && <Status config={config} />}
       <div>
         <input
           type="text"
@@ -53,14 +56,21 @@ export const Form = () => {
           onChange={(e) => setNewBackupSources(e.target.value)}
           value={newBackupSources}
         />
+        <input
+          type="text"
+          placeholder="cron line"
+          onChange={(e) => setNewBackupCronLine(e.target.value)}
+          value={newBackupCronLine}
+        />
         <button
           onClick={() =>
             addBackup({
               backup: {
                 name: newBackupName,
                 sources: newBackupSources.split(","),
-                cronLine: "* * * * *",
+                cronLine: newBackupCronLine,
                 repository: "default",
+                lastRun: undefined,
               },
             })
           }
@@ -68,7 +78,7 @@ export const Form = () => {
           Add backup
         </button>
         <ul>
-          {backups.map(({ name, sources }) => (
+          {config?.backups.map(({ name, sources }) => (
             <li key={name}>
               {name}: {sources.join(" ")}
               <button

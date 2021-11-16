@@ -5,7 +5,13 @@ import { Config } from "../../types/config";
 import { addShutdownTask } from "../utils/shutdown";
 
 const defaultConfig = (): Config => ({
-  repositories: [{ name: "default" }],
+  repositories: [
+    {
+      name: "default",
+      status: "un-initialized",
+      path: `${process.env["BACKUPS_DIR"]}/default`,
+    },
+  ],
   backups: [],
 });
 
