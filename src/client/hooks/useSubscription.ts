@@ -1,4 +1,4 @@
-import { useContext, useEffect } from "react";
+import { useContext, useEffect } from "preact/hooks";
 import { ServerMessageHandler, ServerMessageType } from "../../types/commands";
 import { ChannelContext } from "../Channel";
 

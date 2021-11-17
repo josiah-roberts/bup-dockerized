@@ -1,15 +1,11 @@
-import React from "react";
-import ReactDOM from "react-dom";
+import React, { render } from "preact";
 import "./index.css";
 import { Application } from "./Application";
 
-ReactDOM.render(
+render(
   <>
     Outer
     <Application />
   </>,
-  document.getElementById("app-root"),
-  () => {
-    document.title = "Bup";
-  }
+  document.getElementById("app-root")!
 );

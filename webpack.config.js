@@ -33,8 +33,8 @@ module.exports = {
     }),
     new MiniCssExtractPlugin(),
   ],
-  externals: {
-    'react': 'React',
-    'react-dom': 'ReactDOM'
-  }
+  // externals: {
+  //   'react': 'React',
+  //   'react-dom': 'ReactDOM'
+  // }
 };

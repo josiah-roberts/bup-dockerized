@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from "react";
+import React from "preact";
+import { useCallback, useState } from "preact/hooks";
 import { useClosed } from "../hooks/useClosed";
 import { useOpened } from "../hooks/useOpened";
 import { useCommand } from "../hooks/useCommand";
@@ -47,19 +48,19 @@ export const Form = () => {
         <input
           type="text"
           placeholder="name"
-          onChange={(e) => setNewBackupName(e.target.value)}
+          onChange={(e) => setNewBackupName(e.currentTarget.value)}
           value={newBackupName}
         />
         <input
           type="text"
           placeholder="comma-separated sources"
-          onChange={(e) => setNewBackupSources(e.target.value)}
+          onChange={(e) => setNewBackupSources(e.currentTarget.value)}
           value={newBackupSources}
         />
         <input
           type="text"
           placeholder="cron line"
-          onChange={(e) => setNewBackupCronLine(e.target.value)}
+          onChange={(e) => setNewBackupCronLine(e.currentTarget.value)}
           value={newBackupCronLine}
         />
         <button

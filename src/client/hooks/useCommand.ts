@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { useCallback, useContext, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "preact/hooks";
 import {
   ClientCommandType,
   ClientCommand,

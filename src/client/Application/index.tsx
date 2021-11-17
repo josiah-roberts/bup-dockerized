@@ -1,6 +1,6 @@
-import React from "react";
+import React from "preact";
 import "./application.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "preact/hooks";
 import { Channel, ChannelContext, makeChannel } from "../Channel";
 import { Form } from "./Form";
 

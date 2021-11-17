@@ -1,4 +1,4 @@
-import { useContext, useEffect } from "react";
+import { useContext, useEffect } from "preact/hooks";
 import { ChannelContext } from "../Channel";
 
 export const useClosed = (handler: () => void) => {

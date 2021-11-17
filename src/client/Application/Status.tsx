@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React from "preact";
+import { useCallback, useEffect, useState } from "preact/hooks";
 import { Config } from "../../types/config";
 import { parseExpression } from "cron-parser";
 import {
