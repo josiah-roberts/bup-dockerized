@@ -5,13 +5,16 @@ import {
   addDays,
   format,
   formatDistanceToNow,
-  getMilliseconds,
   getMinutes,
   startOfDay,
   subHours,
   getSeconds,
 } from "date-fns";
 import { useTick } from "../hooks/useTick";
+import { Editable } from "../components/Editable";
+import { AsEditable } from "../components/AsEditable";
+
+const EditableSpan = AsEditable("span");
 
 export const Status = ({ config }: { config: Config }) => {
   const tick = useTick(60_000);
@@ -26,7 +29,7 @@ export const Status = ({ config }: { config: Config }) => {
   );
 
   return (
-    <div>
+    <div class="card">
       {config.repositories.map((repository) => (
         <div>
           {config.backups
@@ -40,8 +43,14 @@ export const Status = ({ config }: { config: Config }) => {
                         (x) => x.name === backup.repository
                       )?.path
                     }
+                    /
                   </span>
-                  /{backup.name} {backup.cronLine}
+                  <EditableSpan
+                    onSubmit={(value, old) => console.log("bing!", value, old)}
+                  >
+                    {backup.name}
+                  </EditableSpan>{" "}
+                  {backup.cronLine}
                 </h3>
                 <div>
                   {backup.lastRun

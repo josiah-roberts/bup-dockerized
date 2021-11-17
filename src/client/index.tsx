@@ -3,9 +3,7 @@ import "./index.css";
 import { Application } from "./Application";
 
 render(
-  <>
-    Outer
-    <Application />
-  </>,
-  document.getElementById("app-root")!
+  <Application />,
+  document.body,
+  document.getElementById("app-root") ?? undefined
 );

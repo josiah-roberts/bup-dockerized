@@ -5,6 +5,10 @@ import { useCommand } from "../hooks/useCommand";
 import { Backup, Config } from "../../types/config";
 import { ServerMessage } from "../../types/commands";
 import { Status } from "./Status";
+import { Editable } from "../components/Editable";
+import { AsEditable } from "../components/AsEditable";
+
+const EditableA = AsEditable("a");
 
 export const Form = () => {
   const [config, setConfig] = useState<Config>();
@@ -43,7 +47,27 @@ export const Form = () => {
   return (
     <>
       {config && <Status config={config} />}
-      <div>
+      <div class="card">
+        <p>
+          <EditableA onSubmit={() => Promise.resolve()}>sadf</EditableA>
+        </p>
+        <p>
+          <EditableA
+            onSubmit={(v) =>
+              new Promise((res, rej) =>
+                setTimeout(
+                  () =>
+                    v === "more tacos"
+                      ? res()
+                      : rej(new Error("need more tacos")),
+                  1000
+                )
+              )
+            }
+          >
+            tacos
+          </EditableA>
+        </p>
         <input
           type="text"
           placeholder="name"

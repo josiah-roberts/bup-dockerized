@@ -12,8 +12,8 @@ export const Application = () => {
   }, [channel]);
 
   return (
-    <div>
-      <h1>Hello dockerized Bois!</h1>
+    <div class="application" id="application">
+      <h1 class="card">Hello dockerized Bois!</h1>
       <ChannelContext.Provider value={channel}>
         <Form />
       </ChannelContext.Provider>
