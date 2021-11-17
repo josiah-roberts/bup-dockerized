@@ -1,4 +1,3 @@
-import React from "preact";
 import { useCallback, useState } from "preact/hooks";
 import { useClosed } from "../hooks/useClosed";
 import { useOpened } from "../hooks/useOpened";

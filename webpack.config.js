@@ -33,11 +33,6 @@ module.exports = {
     }),
     new MiniCssExtractPlugin(),
   ],
-  // resolve: {
-  //   alias: {
-  //     luxon: __dirname + '/src/client/luxon-compat.ts'
-  //   }
-  // }
   externals: {    
     luxon: 'luxon'
   }
