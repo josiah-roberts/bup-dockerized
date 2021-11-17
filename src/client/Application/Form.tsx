@@ -48,19 +48,19 @@ export const Form = () => {
         <input
           type="text"
           placeholder="name"
-          onChange={(e) => setNewBackupName(e.currentTarget.value)}
+          onInput={(e) => setNewBackupName(e.currentTarget.value)}
           value={newBackupName}
         />
         <input
           type="text"
           placeholder="comma-separated sources"
-          onChange={(e) => setNewBackupSources(e.currentTarget.value)}
+          onInput={(e) => setNewBackupSources(e.currentTarget.value)}
           value={newBackupSources}
         />
         <input
           type="text"
           placeholder="cron line"
-          onChange={(e) => setNewBackupCronLine(e.currentTarget.value)}
+          onInput={(e) => setNewBackupCronLine(e.currentTarget.value)}
           value={newBackupCronLine}
         />
         <button
