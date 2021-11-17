@@ -33,8 +33,12 @@ module.exports = {
     }),
     new MiniCssExtractPlugin(),
   ],
-  // externals: {
-  //   'react': 'React',
-  //   'react-dom': 'ReactDOM'
+  // resolve: {
+  //   alias: {
+  //     luxon: __dirname + '/src/client/luxon-compat.ts'
+  //   }
   // }
+  externals: {    
+    luxon: 'luxon'
+  }
 };

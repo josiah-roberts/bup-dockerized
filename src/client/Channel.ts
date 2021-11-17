@@ -1,4 +1,5 @@
 import { createContext } from "preact";
+import { once } from "ramda";
 import {
   ClientCommandType,
   ServerMessage,
@@ -16,17 +17,31 @@ export type Channel = {
   opened: (handler: () => void) => () => void;
 };
 
-export function makeChannel(): Channel {
+const makeWebsocket = () => {
   const socket = new WebSocket("ws://localhost:8080/ws");
   socket.addEventListener("message", (ev) => {
-    console.info("Recieved %s", String(ev.data));
+    console.info("Recieved", ev.data);
   });
+  socket.addEventListener("open", () => {
+    console.info("Opened socket");
+  });
+  socket.addEventListener("close", () => {
+    console.info("Closed socket");
+  });
+  socket.addEventListener("error", (e) => {
+    console.error("Socket error", e);
+  });
+  return socket;
+};
+
+export function makeChannel(): Channel {
+  const socketThunk = once(makeWebsocket);
 
   return {
     send(command) {
       const json = JSON.stringify(command);
       console.info("Sent %s", json);
-      socket.send(json);
+      socketThunk().send(json);
     },
     subscribe(type, handler, correlation) {
       console.log("Subscribed to %s %s", type, correlation);
@@ -40,16 +55,16 @@ export function makeChannel(): Channel {
           handler(deserialized as Parameters<typeof handler>[0], ev);
         }
       };
-      socket.addEventListener("message", wrappedHandler);
-      return () => socket.removeEventListener("message", wrappedHandler);
+      socketThunk().addEventListener("message", wrappedHandler);
+      return () => socketThunk().removeEventListener("message", wrappedHandler);
     },
     opened(handler) {
-      socket.addEventListener("open", handler);
-      return () => socket.removeEventListener("open", handler);
+      socketThunk().addEventListener("open", handler);
+      return () => socketThunk().removeEventListener("open", handler);
     },
     closed(handler) {
-      socket.addEventListener("close", handler);
-      return () => socket.removeEventListener("close", handler);
+      socketThunk().addEventListener("close", handler);
+      return () => socketThunk().removeEventListener("close", handler);
     },
   };
 }
