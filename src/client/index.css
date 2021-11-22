@@ -20,3 +20,29 @@ body {
 .underline {
   text-decoration: underline;
 }
+
+.small {
+  font-size: small;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.dot-underline {
+  border-bottom: 1px dashed #999;
+}
+
+.bar {
+  margin-left: 0.25em;
+  margin-right: 0.25em;
+}
+
+.bar::after {
+  content: "|";
+}
+
+ul.sources-list {
+  list-style: none;
+  padding-left: 1em;
+}

@@ -14,11 +14,14 @@ export const Status = ({
           {config.backups
             .filter((x) => x.repository === repository.name)
             .map((backup) => (
-              <BackupStatus
-                key={backup.id}
-                backup={backup}
-                repository={repository}
-              />
+              <>
+                <BackupStatus
+                  key={backup.id}
+                  backup={backup}
+                  repository={repository}
+                />
+                <hr />
+              </>
             ))}
         </div>
       ))}

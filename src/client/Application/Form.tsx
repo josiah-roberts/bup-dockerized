@@ -54,26 +54,6 @@ export const Form = () => {
     <>
       {config && <Status config={config} />}
       <div class="card">
-        {/* <p>
-          <EditableA onSubmit={() => Promise.resolve()}>sadf</EditableA>
-        </p>
-        <p>
-          <EditableA
-            onSubmit={(v) =>
-              new Promise<void>((res, rej) =>
-                setTimeout(
-                  () =>
-                    v === "more tacos"
-                      ? res()
-                      : rej(new Error("need more tacos")),
-                  1000
-                )
-              )
-            }
-          >
-            tacos
-          </EditableA>
-        </p> */}
         <input
           type="text"
           placeholder="name"
