@@ -7,11 +7,13 @@ export type Backup = {
   id: string;
 };
 
+export type Repository = {
+  name: string;
+  status: "un-initialized" | "initialized" | "orphaned";
+  path: string;
+};
+
 export type Config = {
-  repositories: Array<{
-    name: string;
-    status: "un-initialized" | "initialized" | "orphaned";
-    path: string;
-  }>;
+  repositories: Repository[];
   backups: Backup[];
 };

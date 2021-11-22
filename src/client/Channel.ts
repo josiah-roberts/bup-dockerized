@@ -56,7 +56,10 @@ export function makeChannel(): Channel {
         }
       };
       socketThunk().addEventListener("message", wrappedHandler);
-      return () => socketThunk().removeEventListener("message", wrappedHandler);
+      return () => {
+        console.log("Unsubscribed from %s %s", type, correlation);
+        socketThunk().removeEventListener("message", wrappedHandler);
+      };
     },
     opened(handler) {
       socketThunk().addEventListener("open", handler);

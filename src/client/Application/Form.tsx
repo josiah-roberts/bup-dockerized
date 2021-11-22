@@ -18,7 +18,8 @@ export const Form = () => {
   const [newBackupSources, setNewBackupSources] = useState<string>("");
   const [newBackupCronLine, setNewBackupCronLine] = useState<string>("");
 
-  const [getConfig] = useCommand(
+  const [getConfig] = useCommand("get-config");
+  useSubscription(
     "get-config",
     useCallback(
       ({ config }: ServerMessage<"get-config">) => {
@@ -36,8 +37,11 @@ export const Form = () => {
     [getConfig]
   );
 
-  const [addBackup] = useCommand("add-backup", reloadBackups);
-  const [removeBackup] = useCommand("remove-backup", reloadBackups);
+  const [addBackup, ab] = useCommand("add-backup");
+  useSubscription("add-backup", reloadBackups, ab);
+
+  const [removeBackup, rb] = useCommand("remove-backup");
+  useSubscription("remove-backup", reloadBackups, rb);
 
   useOpened(() => {
     getConfig();
@@ -48,9 +52,9 @@ export const Form = () => {
 
   return (
     <>
-      {config && <Status config={config} onChange={getConfig} />}
+      {config && <Status config={config} />}
       <div class="card">
-        <p>
+        {/* <p>
           <EditableA onSubmit={() => Promise.resolve()}>sadf</EditableA>
         </p>
         <p>
@@ -69,7 +73,7 @@ export const Form = () => {
           >
             tacos
           </EditableA>
-        </p>
+        </p> */}
         <input
           type="text"
           placeholder="name"

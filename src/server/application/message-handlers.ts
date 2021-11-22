@@ -126,6 +126,7 @@ export const messageHandlers: {
       send(ws, "edit-backup", {
         error: `Backup with name ${message.backup.name} already exists`,
       });
+      return;
     }
 
     await setConfig({
@@ -134,7 +135,7 @@ export const messageHandlers: {
         .filter((x) => x.id !== message.backup.id)
         .concat(message.backup),
     });
-    send(ws, "remove-backup", {});
+    send(ws, "edit-backup", {});
   },
   ls: ({ message }, ws) => {
     exec(

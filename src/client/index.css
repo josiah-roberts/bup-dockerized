@@ -16,3 +16,7 @@ body {
   margin-left: auto;
   margin-right: auto;
 }
+
+.underline {
+  text-decoration: underline;
+}

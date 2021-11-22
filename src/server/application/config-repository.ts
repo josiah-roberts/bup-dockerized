@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "fs/promises";
-import { once } from "ramda";
+import { once, sortBy } from "ramda";
 import assert from "assert";
 import { Config } from "../../types/config";
 import { addShutdownTask } from "../utils/shutdown";
@@ -52,7 +52,11 @@ const writeConfig = async () => {
 
 export const getConfig = async () => inMemoryConfig ?? loadConfig();
 export const setConfig = async (newConfig: Config) => {
-  inMemoryConfig = newConfig;
+  const configToWrite = {
+    ...newConfig,
+    backups: sortBy((b) => b.repository + b.name, newConfig.backups),
+  };
+  inMemoryConfig = configToWrite;
   await writeConfig();
 };
 
