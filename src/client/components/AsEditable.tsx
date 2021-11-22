@@ -19,7 +19,7 @@ export function AsEditable<K extends keyof JSX.IntrinsicElements>(As: K) {
     "children" | "onSubmit" | "value" | "ref"
   > & {
     children: string;
-    onSubmit: (newValue: string, oldValue: string) => Promise<void> | void;
+    onSubmit: (newValue: string, oldValue: string) => Promise<unknown> | void;
   }) => {
     const [state, setState] = useState<"display" | "edit" | "submit">(
       "display"

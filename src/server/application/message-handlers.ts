@@ -94,18 +94,47 @@ export const messageHandlers: {
   },
   "remove-backup": async ({ message }, ws) => {
     const config = await getConfig();
-    const backup = config.backups.find((x) => x.name === message.backupName);
+    const backup = config.backups.find((x) => x.id === message.id);
     if (!backup) {
       send(ws, "remove-backup", {
-        error: `${message.backupName} does not exist exists`,
+        error: `Backup with id ${message.id} does not exist`,
       });
-    } else {
-      await setConfig({
-        ...config,
-        backups: config.backups.filter((x) => x !== backup),
-      });
-      send(ws, "remove-backup", {});
+      return;
     }
+
+    await setConfig({
+      ...config,
+      backups: config.backups.filter((x) => x !== backup),
+    });
+    send(ws, "remove-backup", {});
+  },
+  "edit-backup": async ({ message }, ws) => {
+    const config = await getConfig();
+    const backup = config.backups.find((x) => x.id === message.backup.id);
+    if (!backup) {
+      send(ws, "edit-backup", {
+        error: `Backup with id ${message.backup.id} does not exist`,
+      });
+      return;
+    }
+
+    if (
+      config.backups.some(
+        (x) => x.name === message.backup.name && x.id !== message.backup.id
+      )
+    ) {
+      send(ws, "edit-backup", {
+        error: `Backup with name ${message.backup.name} already exists`,
+      });
+    }
+
+    await setConfig({
+      ...config,
+      backups: config.backups
+        .filter((x) => x.id !== message.backup.id)
+        .concat(message.backup),
+    });
+    send(ws, "remove-backup", {});
   },
   ls: ({ message }, ws) => {
     exec(

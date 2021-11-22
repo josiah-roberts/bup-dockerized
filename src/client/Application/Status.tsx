@@ -13,11 +13,20 @@ import {
 import { useTick } from "../hooks/useTick";
 import { Editable } from "../components/Editable";
 import { AsEditable } from "../components/AsEditable";
+import { useCommand } from "../hooks/useCommand";
 
 const EditableSpan = AsEditable("span");
 
-export const Status = ({ config }: { config: Config }) => {
+export const Status = ({
+  config,
+  onChange,
+}: {
+  config: Config;
+  onChange?: () => void;
+}) => {
   const tick = useTick(60_000);
+
+  const [editBackup] = useCommand("edit-backup", onChange);
 
   useEffect(() => {
     console.log("Ticked! %s", tick);
@@ -46,7 +55,9 @@ export const Status = ({ config }: { config: Config }) => {
                     /
                   </span>
                   <EditableSpan
-                    onSubmit={(value, old) => console.log("bing!", value, old)}
+                    onSubmit={(value, old) =>
+                      editBackup({ backup: { ...backup, name: value } })
+                    }
                   >
                     {backup.name}
                   </EditableSpan>{" "}

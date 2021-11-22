@@ -7,6 +7,8 @@ import { ServerMessage } from "../../types/commands";
 import { Status } from "./Status";
 import { Editable } from "../components/Editable";
 import { AsEditable } from "../components/AsEditable";
+import { nanoid } from "nanoid";
+import { useSubscription } from "../hooks/useSubscription";
 
 const EditableA = AsEditable("a");
 
@@ -46,7 +48,7 @@ export const Form = () => {
 
   return (
     <>
-      {config && <Status config={config} />}
+      {config && <Status config={config} onChange={getConfig} />}
       <div class="card">
         <p>
           <EditableA onSubmit={() => Promise.resolve()}>sadf</EditableA>
@@ -54,7 +56,7 @@ export const Form = () => {
         <p>
           <EditableA
             onSubmit={(v) =>
-              new Promise((res, rej) =>
+              new Promise<void>((res, rej) =>
                 setTimeout(
                   () =>
                     v === "more tacos"
@@ -94,7 +96,7 @@ export const Form = () => {
                 sources: newBackupSources.split(","),
                 cronLine: newBackupCronLine,
                 repository: "default",
-                lastRun: undefined,
+                id: nanoid(),
               },
             })
           }
@@ -102,13 +104,10 @@ export const Form = () => {
           Add backup
         </button>
         <ul>
-          {config?.backups.map(({ name, sources }) => (
+          {config?.backups.map(({ name, id, sources }) => (
             <li key={name}>
               {name}: {sources.join(" ")}
-              <button
-                type="button"
-                onClick={() => removeBackup({ backupName: name })}
-              >
+              <button type="button" onClick={() => removeBackup({ id })}>
                 Delete
               </button>
             </li>

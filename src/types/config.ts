@@ -4,6 +4,7 @@ export type Backup = {
   cronLine: string;
   lastRun?: string;
   sources: string[];
+  id: string;
 };
 
 export type Config = {
