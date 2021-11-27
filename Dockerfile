@@ -1,6 +1,6 @@
 FROM node:latest
 
-RUN apt-get update && apt-get install bup iputils-ping -y
+RUN apt-get update && apt-get install bup -y
 
 WORKDIR /usr/app
 COPY ./package.json /usr/app/package.json

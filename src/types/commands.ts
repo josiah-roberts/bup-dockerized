@@ -14,6 +14,7 @@ export type ClientCommandType = (
   | { type: "add-backup"; backup: Backup }
   | { type: "remove-backup"; id: string }
   | { type: "edit-backup"; backup: Backup }
+  | { type: "run-now"; id: string }
 ) & { correlation: string };
 export type ClientCommand<TKey extends ClientCommandType["type"]> = Exclude<
   ClientCommandType,

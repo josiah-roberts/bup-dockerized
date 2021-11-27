@@ -26,6 +26,7 @@ export const BackupStatus = ({
   const [editName, setEditName] = useState(backup.name);
   const [editCronline, setEditCronline] = useState(backup.cronLine);
 
+  const [runNow] = useCommand("run-now");
   const [getConfig] = useCommand("get-config");
   const [editBackup, eb] = useCommand("edit-backup");
 
@@ -64,6 +65,7 @@ export const BackupStatus = ({
           onReset={() => setEditName(backup.name)}
           value={editName}
         />
+        <button onClick={() => runNow({ id: backup.id })}>Run now</button>
       </h3>
       <ul class="sources-list">
         {backup.sources.map((source) => (

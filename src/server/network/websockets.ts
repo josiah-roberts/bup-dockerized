@@ -29,13 +29,21 @@ export const createWsServer = () => {
 
       const parsed = JSON.parse(String(message)) as ClientCommandType;
 
-      withCorrelation(parsed.correlation, () => {
+      withCorrelation(parsed.correlation, async () => {
         const handler = messageHandlers[parsed.type] as unknown as (
           incoming: MessageContainer<typeof parsed.type>,
           ws: WebSocket,
           wss: WebSocketServer
         ) => void;
-        handler({ message: parsed, rawMessage: message, isBinary }, ws, wss);
+        try {
+          await handler(
+            { message: parsed, rawMessage: message, isBinary },
+            ws,
+            wss
+          );
+        } catch (e) {
+          console.error(e);
+        }
       });
     });
   });

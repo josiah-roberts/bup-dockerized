@@ -11,6 +11,7 @@ import { getAnyCorrelation } from "../utils/correlation";
 import { DistributiveOmit } from "../../types/util";
 import { isEmpty, isNil } from "ramda";
 import { parseExpression } from "cron-parser";
+import { run } from "./bup-actions";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
   message: ClientCommand<T>;
@@ -136,6 +137,16 @@ export const messageHandlers: {
         .concat(message.backup),
     });
     send(ws, "edit-backup", {});
+  },
+  "run-now": async ({ message }, ws) => {
+    const config = await getConfig();
+    const backup = config.backups.find((x) => x.id === message.id);
+    if (!backup) return;
+
+    const repo = config.repositories.find((x) => x.name === backup.repository);
+    if (!repo) return;
+
+    await run(repo, backup);
   },
   ls: ({ message }, ws) => {
     exec(
