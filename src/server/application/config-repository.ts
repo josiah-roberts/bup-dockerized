@@ -30,10 +30,7 @@ const loadConfig = once(() =>
       console.warn(e);
       return defaultConfig();
     })
-    .then((config) => {
-      inMemoryConfig = config;
-      return config;
-    })
+    .then((config) => setConfig(config))
 );
 
 let writing = false;
@@ -48,16 +45,19 @@ const writeConfig = async () => {
   } else {
     console.warn("Already writing config!");
   }
+  return inMemoryConfig;
 };
 
-export const getConfig = async () => inMemoryConfig ?? loadConfig();
-export const setConfig = async (newConfig: Config) => {
+export const getConfig = () => inMemoryConfig ?? loadConfig();
+export const setConfig = (newConfig: Config) => {
   const configToWrite = {
     ...newConfig,
     backups: sortBy((b) => b.repository + b.name, newConfig.backups),
   };
   inMemoryConfig = configToWrite;
-  await writeConfig();
+  return writeConfig();
 };
 
-addShutdownTask("write config", writeConfig);
+addShutdownTask("write config", async () => {
+  await writeConfig();
+});

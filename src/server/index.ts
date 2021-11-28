@@ -24,6 +24,8 @@ checkEnv("BACKUPS_DIR")
   })
   .then(async (config) => {
     console.info("\n### Determining backup status... ###\n");
+    console.info(`Found ${config.backups.length} backups`);
+
     for (const b of config.backups) {
       const repository = config.repositories.find(
         (x) => x.name === b.repository

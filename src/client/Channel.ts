@@ -18,7 +18,7 @@ export type Channel = {
 };
 
 const makeWebsocket = () => {
-  const socket = new WebSocket("ws://localhost:8080/ws");
+  const socket = new WebSocket(`ws://${location.host}/ws`);
   socket.addEventListener("message", (ev) => {
     console.info("Recieved", ev.data);
   });

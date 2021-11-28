@@ -60,8 +60,7 @@ export const BackupStatusPanel = ({
         setStatus(m.status);
       },
       [rn, gs, eb]
-    ),
-    [rn, gs, eb]
+    )
   );
 
   const nextRun = useCallback(
