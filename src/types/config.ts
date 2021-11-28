@@ -2,7 +2,6 @@ export type Backup = {
   repository: string;
   name: string;
   cronLine: string;
-  lastRun?: string;
   sources: string[];
   id: string;
 };

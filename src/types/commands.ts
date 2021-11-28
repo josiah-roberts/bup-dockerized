@@ -1,4 +1,5 @@
 import { Backup, Config } from "./config";
+import { BackupStatus } from "./status";
 
 export type ClientCommandType = (
   | {
@@ -32,7 +33,7 @@ type ConfigMessage = {
 type BackupStatusMessage = {
   type: "backup-status";
   backup: Backup;
-  status: string;
+  status: BackupStatus;
 };
 type LsMessage = {
   type: "ls";

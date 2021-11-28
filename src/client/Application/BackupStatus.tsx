@@ -1,10 +1,12 @@
 import { parseExpression } from "cron-parser";
 import formatDistanceToNow from "date-fns/formatDistanceToNow";
-import { useCallback, useState } from "preact/hooks";
+import { useCallback, useEffect, useState } from "preact/hooks";
 import { JSX } from "preact/jsx-runtime";
 import { Backup, Repository } from "../../types/config";
+import { BackupStatus } from "../../types/status";
 import { AsEditable } from "../components/AsEditable";
 import { useCommand } from "../hooks/useCommand";
+import { useOpened } from "../hooks/useOpened";
 import { useSubscription } from "../hooks/useSubscription";
 import { useTick } from "../hooks/useTick";
 
@@ -14,7 +16,7 @@ const Bar = (props: JSX.IntrinsicElements["span"]) => (
   <span {...props} class="bar" />
 );
 
-export const BackupStatus = ({
+export const BackupStatusPanel = ({
   backup,
   repository,
 }: {
@@ -25,18 +27,38 @@ export const BackupStatus = ({
 
   const [editName, setEditName] = useState(backup.name);
   const [editCronline, setEditCronline] = useState(backup.cronLine);
+  const [status, setStatus] = useState<BackupStatus>();
 
-  const [runNow] = useCommand("run-now");
+  const [runNow, rn] = useCommand("run-now");
   const [editBackup, eb] = useCommand("edit-backup");
+  const [getStatus, gs] = useCommand("get-backup-status");
+
+  useEffect(() => {
+    getStatus({ id: backup.id });
+  }, [backup.id]);
 
   useSubscription(
     "client-error",
-    (m) => {
-      console.log("errored", m);
-      setEditName(backup.name);
-      alert(m.error);
-    },
+    useCallback(
+      (m) => {
+        console.log("errored", m);
+        setEditName(backup.name);
+        alert(m.error);
+      },
+      [eb]
+    ),
     eb
+  );
+
+  useSubscription(
+    "backup-status",
+    useCallback(
+      (m) => {
+        setStatus(m.status);
+      },
+      [rn, gs]
+    ),
+    [rn, gs]
   );
 
   const nextRun = useCallback(
@@ -56,7 +78,18 @@ export const BackupStatus = ({
           onReset={() => setEditName(backup.name)}
           value={editName}
         />
-        <button onClick={() => runNow({ id: backup.id })}>Run now</button>
+        <button
+          disabled={
+            status?.runnability.runnable !== true ||
+            status?.status === "indexing" ||
+            status?.status === "saving"
+          }
+          onClick={() => runNow({ id: backup.id })}
+        >
+          {status?.status === "idle" || status?.status === "never-run"
+            ? "Run now"
+            : status?.status}
+        </button>
       </h3>
       <ul class="sources-list">
         {backup.sources.map((source) => (
@@ -89,14 +122,14 @@ export const BackupStatus = ({
         />
         <Bar style={{ color: "DarkGray" }} />
         <span style={{ color: "DarkGray" }}>
-          {backup.lastRun ? (
+          {status?.lastRun ? (
             <>
               <span>ran </span>
               <span
                 class="dot-underline"
-                title={new Date(backup.lastRun).toLocaleString()}
+                title={new Date(status.lastRun).toLocaleString()}
               >
-                {formatDistanceToNow(new Date(backup.lastRun))} ago
+                {formatDistanceToNow(new Date(status.lastRun))} ago
               </span>
             </>
           ) : (

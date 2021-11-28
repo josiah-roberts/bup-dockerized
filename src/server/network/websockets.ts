@@ -11,6 +11,7 @@ import {
 } from "../application/message-handlers";
 import { getConfig } from "../application/config-repository";
 import { addListener, removeListener } from "../application/events";
+import { BackupStatus } from "../../types/status";
 
 export const patchSendWithLogging = (ws: WebSocket) => {
   const baseSend = ws.send.bind(ws);
@@ -30,16 +31,18 @@ export const createWsServer = () => {
     const sendConfig = async () => {
       send(ws, "config", { config: await getConfig() });
     };
-    const sendStatus = async (backupId: string) => {
-      const backup = (await getConfig()).backups.find((x) => x.id === backupId);
+    const sendStatus = async (status: BackupStatus) => {
+      const backup = (await getConfig()).backups.find(
+        (x) => x.id === status.backupId
+      );
       if (!backup) {
         send(ws, "client-error", {
-          error: `Backup with id ${backupId} does not exist`,
+          error: `Backup with id ${status.backupId} does not exist`,
         });
         return;
       }
 
-      send(ws, "backup-status", { backup, status: "status" });
+      send(ws, "backup-status", { backup, status });
     };
 
     addListener("config", sendConfig);

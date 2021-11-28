@@ -1,10 +1,10 @@
 import { EventEmitter } from "events";
-import { Backup } from "../../types/config";
+import { BackupStatus } from "../../types/status";
 
 const emitter = new EventEmitter();
 type Events = {
   config: void;
-  "backup-status": string;
+  "backup-status": BackupStatus;
 };
 type EventType = keyof Events;
 type Event<T extends EventType> = Events[T];

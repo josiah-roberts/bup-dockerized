@@ -11,9 +11,10 @@ import { getAnyCorrelation } from "../utils/correlation";
 import { DistributiveOmit } from "../../types/util";
 import { isEmpty, isNil } from "ramda";
 import { parseExpression } from "cron-parser";
-import { rename, run } from "./bup-actions";
+import { rename } from "./bup-actions";
 import { emit } from "./events";
-import { determineStatus } from "./status-repository";
+import { getStatus } from "./status-repository";
+import { run } from "./run";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
   message: ClientCommand<T>;
@@ -70,8 +71,16 @@ export const messageHandlers: {
   "get-config": async (_, ws) => {
     emit("config");
   },
-  "get-backup-status": (m, ws) => {
-    emit("backup-status", m.message.id);
+  "get-backup-status": async (m, ws) => {
+    const config = await getConfig();
+    const backup = config.backups.find((x) => x.id === m.message.id);
+    const repo = config.repositories.find((x) => x.name === backup?.repository);
+    if (!backup || !repo) {
+      clientError(`Backup with id ${m.message.id} does not exist`, ws);
+      return;
+    }
+
+    emit("backup-status", await getStatus(repo, backup));
   },
   "add-backup": async ({ message }, ws) => {
     if (isEmpty(message.backup.name) || isEmpty(message.backup.sources)) {
@@ -163,7 +172,6 @@ export const messageHandlers: {
     if (!repo) return;
 
     await run(repo, backup);
-    await determineStatus(repo, backup);
   },
   ls: ({ message }, ws) => {
     exec(

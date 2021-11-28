@@ -1,5 +1,5 @@
 import { Config } from "../../types/config";
-import { BackupStatus } from "./BackupStatus";
+import { BackupStatusPanel } from "./BackupStatus";
 
 export const Status = ({
   config,
@@ -15,7 +15,7 @@ export const Status = ({
             .filter((x) => x.repository === repository.name)
             .map((backup) => (
               <>
-                <BackupStatus
+                <BackupStatusPanel
                   key={backup.id}
                   backup={backup}
                   repository={repository}

@@ -1,5 +1,9 @@
 import { Repository, Backup } from "../../types/config";
-import { spawn, SpawnOptionsWithoutStdio } from "child_process";
+import {
+  spawn,
+  SpawnOptionsWithoutStdio,
+  ChildProcessWithoutNullStreams,
+} from "child_process";
 
 function bup(
   args: string[],
@@ -19,7 +23,7 @@ function git(
   repo: Repository,
   options?: SpawnOptionsWithoutStdio
 ) {
-  const spawned = spawn("git", args, {
+  const spawned = spawn("git", ["--no-pager", ...args], {
     ...options,
     env: { GIT_DIR: repo.path, ...options?.env },
   });
@@ -27,16 +31,31 @@ function git(
   return spawned;
 }
 
+function readProcess(
+  operation: ChildProcessWithoutNullStreams,
+  exitHandler: (stdout: string[], stderr: string[], code: number | null) => void
+) {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+
+  const streamHandler = (dataArray: string[]) => (input: any) => {
+    const lines: string[] = input.toString().split("\n");
+    lines.forEach((l) => console.info(`  ${l}`));
+    dataArray.push(...lines);
+  };
+
+  operation.stdout.on("data", streamHandler(stdout));
+  operation.stderr.on("data", streamHandler(stderr));
+
+  operation.on("exit", (code) => {
+    exitHandler(stdout, stderr, code);
+  });
+}
+
 export function initializeRepository(r: Repository) {
   return new Promise<void>((res, rej) => {
     const init = bup(["init"], r);
-    init.stdout.on("data", (data) => {
-      console.info(data.toString());
-    });
-    init.stderr.on("data", (data) => {
-      console.info(data.toString());
-    });
-    init.on("exit", (code) => {
+    readProcess(init, (stdout, stderr, code) => {
       if (code === 0) res();
       else rej(code);
     });
@@ -48,13 +67,7 @@ export function index(r: Repository, source: string) {
     const index = bup(["index", "-v", "-v", source], r, {
       env: { BUP_SOURCE: source },
     });
-    index.stdout.on("data", (data) => {
-      console.info(data.toString());
-    });
-    index.stderr.on("data", (data) => {
-      console.info(data.toString());
-    });
-    index.on("exit", (code) => {
+    readProcess(index, (stdout, stderr, code) => {
       if (code === 0) res();
       else rej(code);
     });
@@ -69,14 +82,7 @@ export function save(r: Repository, b: Backup) {
       ["save", "-v", "-v", `--name=${b.name}`, ...pathPairs.map(([, p]) => p)],
       r
     );
-
-    save.stdout.on("data", (data) => {
-      console.info(data.toString());
-    });
-    save.stderr.on("data", (data) => {
-      console.info(data.toString());
-    });
-    save.on("exit", (code) => {
+    readProcess(save, (stdout, stderr, code) => {
       if (code === 0) res();
       else rej(code);
     });
@@ -86,14 +92,7 @@ export function save(r: Repository, b: Backup) {
 export function rename(r: Repository, oldName: string, newName: string) {
   return new Promise<void>((res, rej) => {
     const mv = git(["branch", "-m", oldName, newName], r);
-
-    mv.stdout.on("data", (data) => {
-      console.info(data.toString());
-    });
-    mv.stderr.on("data", (data) => {
-      console.info(data.toString());
-    });
-    mv.on("exit", (code) => {
+    readProcess(mv, (stdout, stderr, code) => {
       if (code === 0) res();
       else rej(code);
     });
@@ -101,22 +100,34 @@ export function rename(r: Repository, oldName: string, newName: string) {
 }
 
 export function checkBranchCommited(r: Repository, b: Backup) {
-  return new Promise<Date | void>((res, rej) => {
+  return new Promise<Date | undefined>((res, rej) => {
     const branch = git(["log", "-1", "--format=%ct", b.name], r);
 
-    const stdout: string[] = [];
-    const stderr: string[] = [];
-    branch.stdout.on("data", (data) => stdout.push(data.toString()));
-    branch.stderr.on("data", (data) => stderr.push(data.toString()));
-
-    branch.on("exit", (code) => {
+    readProcess(branch, (stdout, stderr, code) => {
       const error = stderr.join("\n").trim();
       const output = stdout.join("\n").trim();
 
       if (code === 0 && !error) {
         res(new Date(Number(output) * 1_000));
       } else if (error.includes("unknown revision")) {
-        res();
+        res(undefined);
+      } else {
+        rej(error ?? code);
+      }
+    });
+  });
+}
+
+export function getBranchRevisions(r: Repository, b: Backup) {
+  return new Promise<Date[] | undefined>((res, rej) => {
+    const log = git(["log", "--pretty=%aI", b.name], r);
+    readProcess(log, (stdout, stderr, code) => {
+      const error = stderr.join("\n").trim();
+
+      if (code === 0 && !error) {
+        res(stdout.filter((x) => x.length > 0).map((x) => new Date(x.trim())));
+      } else if (error.includes("unknown revision")) {
+        res(undefined);
       } else {
         rej(error ?? code);
       }
@@ -125,32 +136,20 @@ export function checkBranchCommited(r: Repository, b: Backup) {
 }
 
 export function checkBranchBytes(r: Repository, b: Backup) {
-  return new Promise<number | void>((res, rej) => {
+  return new Promise<number | undefined>((res, rej) => {
     const revList = git(["rev-list", "--disk-usage", "--objects", b.name], r);
 
-    const stdout: string[] = [];
-    const stderr: string[] = [];
-    revList.stdout.on("data", (data) => stdout.push(data.toString()));
-    revList.stderr.on("data", (data) => stderr.push(data.toString()));
-
-    revList.on("exit", (code) => {
+    readProcess(revList, (stdout, stderr, code) => {
       const error = stderr.join("\n").trim();
       const output = stdout.join("\n").trim();
 
       if (code === 0 && !error) {
         res(Number(output));
       } else if (error.includes("unknown revision")) {
-        res();
+        res(undefined);
       } else {
         rej(error ?? code);
       }
     });
   });
-}
-
-export async function run(r: Repository, b: Backup) {
-  for (const source of b.sources) {
-    await index(r, source);
-  }
-  await save(r, b);
 }

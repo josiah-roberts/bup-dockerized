@@ -2,6 +2,7 @@ FROM node:latest
 
 WORKDIR /usr/git
 RUN git clone git://git.kernel.org/pub/scm/git/git.git .
+RUN git checkout v2.34.1
 
 RUN apt-get update && apt-get install gettext bup -y
 

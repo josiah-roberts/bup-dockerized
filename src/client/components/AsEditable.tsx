@@ -63,8 +63,6 @@ export function AsEditable<K extends keyof JSX.IntrinsicElements>(As: K) {
 
     const NastyCast = As as unknown as ComponentType<Record<string, unknown>>;
 
-    console.log(state);
-
     return (
       <NastyCast
         style={{ cursor: state === "display" ? "pointer" : "default" }}
