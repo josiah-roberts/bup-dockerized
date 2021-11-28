@@ -13,7 +13,7 @@ export const Application = () => {
 
   return (
     <div class="application" id="application">
-      <h1 class="card">Hello dockerized Bois!</h1>
+      <h1 class="card">Bup Console</h1>
       <ChannelContext.Provider value={channel}>
         <Form />
       </ChannelContext.Provider>

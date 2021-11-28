@@ -32,6 +32,9 @@ export function send<T extends ServerMessageType["type"]>(
 }
 
 function cronIsValid(cronLine: string) {
+  const itemCount = cronLine.split(" ").length;
+  if (itemCount < 5 || itemCount > 6) return false;
+
   try {
     parseExpression(cronLine);
     return true;
@@ -147,6 +150,13 @@ export const messageHandlers: {
 
     if (backup.repository !== message.backup.repository) {
       clientError("Cannot change backup repository", ws);
+      return;
+    }
+
+    if (!cronIsValid(message.backup.cronLine)) {
+      send(ws, "client-error", {
+        error: `Invalid cron line`,
+      });
       return;
     }
 

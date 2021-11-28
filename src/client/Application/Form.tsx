@@ -26,6 +26,8 @@ export const Form = () => {
   const [addBackup, ab] = useCommand("add-backup");
   const [removeBackup, rb] = useCommand("remove-backup");
 
+  useSubscription("client-error", ({ error }) => alert(error), [ab]);
+
   useSubscription("config", handleConfig);
 
   useOpened(() => {

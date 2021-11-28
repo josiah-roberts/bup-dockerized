@@ -43,8 +43,9 @@ export const BackupStatusPanel = ({
     "client-error",
     useCallback(
       (m) => {
-        console.log("errored", m);
         setEditName(backup.name);
+        setEditCronline(backup.cronLine);
+        setAddPath("add source");
         alert(m.error);
       },
       [eb]
