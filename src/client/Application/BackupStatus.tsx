@@ -6,7 +6,6 @@ import { Backup, Repository } from "../../types/config";
 import { BackupStatus } from "../../types/status";
 import { AsEditable } from "../components/AsEditable";
 import { useCommand } from "../hooks/useCommand";
-import { useOpened } from "../hooks/useOpened";
 import { useSubscription } from "../hooks/useSubscription";
 import { useTick } from "../hooks/useTick";
 

@@ -9,7 +9,7 @@ import { spawn, exec } from "child_process";
 import { getConfig, setConfig } from "./config-repository";
 import { getAnyCorrelation } from "../utils/correlation";
 import { DistributiveOmit } from "../../types/util";
-import { isEmpty, isNil } from "ramda";
+import { isEmpty } from "ramda";
 import { parseExpression } from "cron-parser";
 import { rename } from "./bup-actions";
 import { emit } from "./events";

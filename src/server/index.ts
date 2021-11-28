@@ -4,10 +4,9 @@ import { checkEnv } from "./utils/check-env";
 import { createWsServer, wsUpgradeHandler } from "./network/websockets";
 import { staticHandler } from "./network/static";
 import { getConfig } from "./application/config-repository";
-import { initializeRepository, save } from "./application/bup-actions";
+import { initializeRepository } from "./application/bup-actions";
 import assert from "assert";
 import { getStatus } from "./application/status-repository";
-import { run } from "./application/run";
 
 const port = 80 as const;
 
