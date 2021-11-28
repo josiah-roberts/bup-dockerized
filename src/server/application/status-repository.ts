@@ -5,16 +5,9 @@ import {
   checkBranchBytes,
   getBranchRevisions,
 } from "./bup-actions";
-import {
-  BackupStatus,
-  Runnability,
-  RunningStatus,
-  StatusSummary,
-} from "../../types/status";
-import { lens, lensPath, lensProp, set } from "ramda";
+import { BackupStatus, Runnability, RunningStatus } from "../../types/status";
 import { emit } from "./events";
 
-const statusSummaryMap: { [id: string]: StatusSummary | undefined } = {};
 const statusMap: { [id: string]: BackupStatus } = {};
 
 function getRunnability(
@@ -82,11 +75,15 @@ async function rebuildStatus(
     lastRun,
     branchSize,
     revisions,
-    status: getInitialStatusSummary(revisions),
+    status: statusMap[backup.id]?.status ?? getInitialStatusSummary(revisions),
   };
 
   emit("backup-status", status);
   return status;
+}
+
+export async function recomputeStatus(repository: Repository, backup: Backup) {
+  statusMap[backup.id] = await rebuildStatus(repository, backup);
 }
 
 export async function getStatus(repository: Repository, backup: Backup) {

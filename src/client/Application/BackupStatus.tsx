@@ -26,6 +26,8 @@ export const BackupStatusPanel = ({
   const tick = useTick(60_000);
 
   const [editName, setEditName] = useState(backup.name);
+  const [addPath, setAddPath] = useState("add");
+
   const [editCronline, setEditCronline] = useState(backup.cronLine);
   const [status, setStatus] = useState<BackupStatus>();
 
@@ -56,9 +58,9 @@ export const BackupStatusPanel = ({
       (m) => {
         setStatus(m.status);
       },
-      [rn, gs]
+      [rn, gs, eb]
     ),
-    [rn, gs]
+    [rn, gs, eb]
   );
 
   const nextRun = useCallback(
@@ -110,6 +112,20 @@ export const BackupStatusPanel = ({
             </span>
           </li>
         ))}
+        <li>
+          <EditableSpan
+            class="small underline pointer"
+            value={addPath}
+            onInput={(value) => setAddPath(value)}
+            onSubmit={(value) => {
+              editBackup({
+                backup: { ...backup, sources: [...backup.sources, value] },
+              });
+              setAddPath("add");
+            }}
+            onReset={() => setAddPath("add")}
+          />
+        </li>
       </ul>
       <div>
         <EditableSpan

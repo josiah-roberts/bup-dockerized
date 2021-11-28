@@ -13,7 +13,7 @@ import { isEmpty, isNil } from "ramda";
 import { parseExpression } from "cron-parser";
 import { rename } from "./bup-actions";
 import { emit } from "./events";
-import { getStatus } from "./status-repository";
+import { getStatus, recomputeStatus } from "./status-repository";
 import { run } from "./run";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
@@ -161,6 +161,7 @@ export const messageHandlers: {
         .concat(message.backup),
     });
 
+    await recomputeStatus(repo, message.backup);
     emit("config");
   },
   "run-now": async ({ message }, ws) => {

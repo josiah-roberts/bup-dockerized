@@ -47,13 +47,4 @@ checkEnv("BACKUPS_DIR")
       .listen(port, () => {
         console.log("HTTP + WS server is hosted on *:%s\n", port);
       });
-
-    setTimeout(
-      () =>
-        run(
-          config.repositories[0],
-          config.backups.find((x) => x.name === "me")!
-        ).catch(() => {}),
-      10000
-    );
   });

@@ -62,11 +62,7 @@ export function makeChannel(): Channel {
 
         if (
           deserialized.type === type &&
-          (!correlation ||
-            deserialized.correlation === correlation ||
-            (correlation.length &&
-              deserialized.correlation &&
-              correlation.includes(deserialized.correlation)))
+          correlationMatches(deserialized.correlation, correlation)
         ) {
           handler(deserialized as Parameters<typeof handler>[0], ev);
         }
