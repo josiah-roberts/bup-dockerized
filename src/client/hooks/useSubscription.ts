@@ -5,7 +5,7 @@ import { ChannelContext } from "../Channel";
 export const useSubscription = <TKey extends ServerMessageType["type"]>(
   type: TKey,
   handler: ServerMessageHandler<TKey>,
-  correlation?: string
+  correlation?: string | string[]
 ) => {
   const channel = useContext(ChannelContext);
   useEffect(() => {

@@ -11,7 +11,8 @@ import { getAnyCorrelation } from "../utils/correlation";
 import { DistributiveOmit } from "../../types/util";
 import { isEmpty, isNil } from "ramda";
 import { parseExpression } from "cron-parser";
-import { run } from "./bup-actions";
+import { rename, run } from "./bup-actions";
+import { emit } from "./events";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
   message: ClientCommand<T>;
@@ -19,7 +20,7 @@ export type MessageContainer<T extends ClientCommandType["type"]> = {
   isBinary: boolean;
 };
 
-function send<T extends ServerMessageType["type"]>(
+export function send<T extends ServerMessageType["type"]>(
   ws: WebSocket,
   type: T,
   message: DistributiveOmit<ServerMessage<T>, "type" | "correlation">
@@ -35,6 +36,12 @@ function cronIsValid(cronLine: string) {
   } catch {
     return false;
   }
+}
+
+function clientError(error: string, ws: WebSocket) {
+  send(ws, "client-error", {
+    error,
+  });
 }
 
 export const messageHandlers: {
@@ -60,20 +67,18 @@ export const messageHandlers: {
     });
   },
   "get-config": async (_, ws) => {
-    send(ws, "get-config", {
-      config: await getConfig(),
-    });
+    emit("config");
   },
   "add-backup": async ({ message }, ws) => {
     if (isEmpty(message.backup.name) || isEmpty(message.backup.sources)) {
-      send(ws, "add-backup", {
+      send(ws, "client-error", {
         error: `Missing required info`,
       });
       return;
     }
 
     if (!cronIsValid(message.backup.cronLine)) {
-      send(ws, "add-backup", {
+      send(ws, "client-error", {
         error: `Invalid cron line`,
       });
       return;
@@ -81,7 +86,7 @@ export const messageHandlers: {
 
     const config = await getConfig();
     if (config.backups.some((x) => x.name === message.backup.name)) {
-      send(ws, "add-backup", {
+      send(ws, "client-error", {
         error: `${message.backup.name} already exists`,
       });
       return;
@@ -91,15 +96,14 @@ export const messageHandlers: {
       ...config,
       backups: [...config.backups, message.backup],
     });
-    send(ws, "add-backup", { backup: message.backup });
+
+    emit("config");
   },
   "remove-backup": async ({ message }, ws) => {
     const config = await getConfig();
     const backup = config.backups.find((x) => x.id === message.id);
     if (!backup) {
-      send(ws, "remove-backup", {
-        error: `Backup with id ${message.id} does not exist`,
-      });
+      clientError(`Backup with id ${message.id} does not exist`, ws);
       return;
     }
 
@@ -107,15 +111,15 @@ export const messageHandlers: {
       ...config,
       backups: config.backups.filter((x) => x !== backup),
     });
-    send(ws, "remove-backup", {});
+
+    emit("config");
   },
   "edit-backup": async ({ message }, ws) => {
     const config = await getConfig();
     const backup = config.backups.find((x) => x.id === message.backup.id);
-    if (!backup) {
-      send(ws, "edit-backup", {
-        error: `Backup with id ${message.backup.id} does not exist`,
-      });
+    const repo = config.repositories.find((x) => x.name === backup?.repository);
+    if (!backup || !repo) {
+      clientError(`Backup with id ${message.backup.id} does not exist`, ws);
       return;
     }
 
@@ -124,10 +128,17 @@ export const messageHandlers: {
         (x) => x.name === message.backup.name && x.id !== message.backup.id
       )
     ) {
-      send(ws, "edit-backup", {
-        error: `Backup with name ${message.backup.name} already exists`,
-      });
+      clientError(`Backup with name ${message.backup.name} already exists`, ws);
       return;
+    }
+
+    if (backup.repository !== message.backup.repository) {
+      clientError("Cannot change backup repository", ws);
+      return;
+    }
+
+    if (message.backup.name !== backup.name) {
+      await rename(repo, backup.name, message.backup.name);
     }
 
     await setConfig({
@@ -136,7 +147,8 @@ export const messageHandlers: {
         .filter((x) => x.id !== message.backup.id)
         .concat(message.backup),
     });
-    send(ws, "edit-backup", {});
+
+    emit("config");
   },
   "run-now": async ({ message }, ws) => {
     const config = await getConfig();

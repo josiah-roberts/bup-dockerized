@@ -27,24 +27,15 @@ export const BackupStatus = ({
   const [editCronline, setEditCronline] = useState(backup.cronLine);
 
   const [runNow] = useCommand("run-now");
-  const [getConfig] = useCommand("get-config");
   const [editBackup, eb] = useCommand("edit-backup");
 
   useSubscription(
-    "edit-backup",
-    useCallback(
-      (m) => {
-        if ("error" in m) {
-          console.log("errored", m);
-          setEditName(backup.name);
-          alert(m.error);
-        } else {
-          console.log("Did not error", m);
-        }
-        getConfig();
-      },
-      [getConfig]
-    ),
+    "client-error",
+    (m) => {
+      console.log("errored", m);
+      setEditName(backup.name);
+      alert(m.error);
+    },
     eb
   );
 

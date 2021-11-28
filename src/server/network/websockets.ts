@@ -7,7 +7,10 @@ import { withCorrelation } from "../utils/correlation";
 import {
   MessageContainer,
   messageHandlers,
+  send,
 } from "../application/message-handlers";
+import { getConfig } from "../application/config-repository";
+import { addListener, removeListener } from "../application/events";
 
 export const patchSendWithLogging = (ws: WebSocket) => {
   const baseSend = ws.send.bind(ws);
@@ -23,6 +26,12 @@ export const createWsServer = () => {
   wss.on("connection", function connection(ws) {
     console.info("WS connected");
     patchSendWithLogging(ws);
+
+    const sendConfig = async () => {
+      send(ws, "config", { config: await getConfig() });
+    };
+
+    addListener("config", sendConfig);
 
     ws.on("message", function incoming(message, isBinary) {
       console.info("WS message: %s", message);
@@ -45,6 +54,10 @@ export const createWsServer = () => {
           console.error(e);
         }
       });
+    });
+
+    ws.on("close", () => {
+      removeListener("config", sendConfig);
     });
   });
 

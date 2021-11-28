@@ -21,12 +21,8 @@ export type ClientCommand<TKey extends ClientCommandType["type"]> = Exclude<
   { type: Exclude<ClientCommandType["type"], TKey> }
 >;
 
-type SimpleResponse<T extends string, TSuccess extends {} = {}> = {
-  type: T;
-} & (TSuccess | { error: string });
-
-type GetConfigMessage = {
-  type: "get-config";
+type ConfigMessage = {
+  type: "config";
   config: Config;
 };
 type LsMessage = {
@@ -34,16 +30,12 @@ type LsMessage = {
   items: string[];
 };
 
-type AddBackupMessage = SimpleResponse<"add-backup", { backup: Backup }>;
-type RemoveBackupMessage = SimpleResponse<"remove-backup">;
-type EditBackupMessage = SimpleResponse<"edit-backup">;
+type ClientErrorMessage = { type: "client-error"; error: string };
 
 export type ServerMessageType = { correlation?: string } & (
-  | GetConfigMessage
+  | ConfigMessage
   | LsMessage
-  | AddBackupMessage
-  | RemoveBackupMessage
-  | EditBackupMessage
+  | ClientErrorMessage
 );
 export type ServerMessage<TKey extends ServerMessageType["type"]> = Exclude<
   ServerMessageType,

@@ -11,7 +11,7 @@ export type Channel = {
   subscribe<TKey extends ServerMessageType["type"]>(
     type: TKey,
     handler: (message: ServerMessage<TKey>, event: MessageEvent) => void,
-    correlation?: string
+    correlation?: string | string[]
   ): () => void;
   closed: (handler: () => void) => () => void;
   opened: (handler: () => void) => () => void;
@@ -34,6 +34,18 @@ const makeWebsocket = () => {
   return socket;
 };
 
+const correlationMatches = (
+  messageCorrelation: string | undefined,
+  correlation: string | string[] | undefined
+) => {
+  if (!correlation) return true;
+  if (!messageCorrelation) return false;
+
+  if (correlation === messageCorrelation) return true;
+
+  return correlation.includes(messageCorrelation);
+};
+
 export function makeChannel(): Channel {
   const socketThunk = once(makeWebsocket);
 
@@ -50,7 +62,11 @@ export function makeChannel(): Channel {
 
         if (
           deserialized.type === type &&
-          (!correlation || deserialized.correlation === correlation)
+          (!correlation ||
+            deserialized.correlation === correlation ||
+            (correlation.length &&
+              deserialized.correlation &&
+              correlation.includes(deserialized.correlation)))
         ) {
           handler(deserialized as Parameters<typeof handler>[0], ev);
         }

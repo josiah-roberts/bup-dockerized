@@ -2,15 +2,11 @@ import { useCallback, useState } from "preact/hooks";
 import { useClosed } from "../hooks/useClosed";
 import { useOpened } from "../hooks/useOpened";
 import { useCommand } from "../hooks/useCommand";
-import { Backup, Config } from "../../types/config";
+import { Config } from "../../types/config";
 import { ServerMessage } from "../../types/commands";
 import { Status } from "./Status";
-import { Editable } from "../components/Editable";
-import { AsEditable } from "../components/AsEditable";
 import { nanoid } from "nanoid";
 import { useSubscription } from "../hooks/useSubscription";
-
-const EditableA = AsEditable("a");
 
 export const Form = () => {
   const [config, setConfig] = useState<Config>();
@@ -18,34 +14,24 @@ export const Form = () => {
   const [newBackupSources, setNewBackupSources] = useState<string>("");
   const [newBackupCronLine, setNewBackupCronLine] = useState<string>("");
 
-  const [getConfig] = useCommand("get-config");
-  useSubscription(
-    "get-config",
-    useCallback(
-      ({ config }: ServerMessage<"get-config">) => {
-        setConfig(config);
-      },
-      [setConfig]
-    )
+  const handleConfig = useCallback(
+    ({ config }: ServerMessage<"config">) => {
+      setConfig(config);
+    },
+    [setConfig]
   );
 
-  const reloadBackups = useCallback(
-    (msg: ServerMessage<"add-backup" | "remove-backup">) => {
-      if ("error" in msg) alert(msg.error);
-      else getConfig();
-    },
-    [getConfig]
-  );
+  const [getConfig, gc] = useCommand("get-config");
 
   const [addBackup, ab] = useCommand("add-backup");
-  useSubscription("add-backup", reloadBackups, ab);
-
   const [removeBackup, rb] = useCommand("remove-backup");
-  useSubscription("remove-backup", reloadBackups, rb);
+
+  useSubscription("config", handleConfig);
 
   useOpened(() => {
     getConfig();
   });
+
   useClosed(() => {
     setTimeout(() => location.reload(), 500);
   });

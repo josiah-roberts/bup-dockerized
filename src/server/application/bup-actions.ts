@@ -14,6 +14,19 @@ function bup(
   return spawned;
 }
 
+function git(
+  args: string[],
+  repo: Repository,
+  options?: SpawnOptionsWithoutStdio
+) {
+  const spawned = spawn("git", args, {
+    ...options,
+    env: { GIT_DIR: repo.path, ...options?.env },
+  });
+  console.info(spawned.spawnargs.join(" "));
+  return spawned;
+}
+
 export function initializeRepository(r: Repository) {
   return new Promise<void>((res, rej) => {
     const init = bup(["init"], r);
@@ -54,8 +67,7 @@ export function save(r: Repository, b: Backup) {
 
     const save = bup(
       ["save", "-v", "-v", `--name=${b.name}`, ...pathPairs.map(([, p]) => p)],
-      r,
-      { env: { BUP_NAME: b.name, ...Object.fromEntries(pathPairs) } }
+      r
     );
 
     save.stdout.on("data", (data) => {
@@ -65,6 +77,23 @@ export function save(r: Repository, b: Backup) {
       console.info(data.toString());
     });
     save.on("exit", (code) => {
+      if (code === 0) res();
+      else rej(code);
+    });
+  });
+}
+
+export async function rename(r: Repository, oldName: string, newName: string) {
+  return new Promise<void>((res, rej) => {
+    const mv = git(["branch", "-m", oldName, newName], r);
+
+    mv.stdout.on("data", (data) => {
+      console.info(data.toString());
+    });
+    mv.stderr.on("data", (data) => {
+      console.info(data.toString());
+    });
+    mv.on("exit", (code) => {
       if (code === 0) res();
       else rej(code);
     });
