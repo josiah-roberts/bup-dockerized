@@ -83,7 +83,7 @@ async function rebuildStatus(
 }
 
 export async function recomputeStatus(repository: Repository, backup: Backup) {
-  statusMap[backup.id] = await rebuildStatus(repository, backup);
+  return (statusMap[backup.id] = await rebuildStatus(repository, backup));
 }
 
 export async function getStatus(repository: Repository, backup: Backup) {
@@ -105,7 +105,7 @@ export async function clearRunningStatus(
   repository: Repository,
   backup: Backup
 ) {
-  const currentStatus = await getStatus(repository, backup);
+  const currentStatus = await recomputeStatus(repository, backup);
   statusMap[backup.id] = {
     ...currentStatus,
     status: getInitialStatusSummary(currentStatus.revisions),

@@ -25,7 +25,7 @@ export const BackupStatusPanel = ({
   const tick = useTick(60_000);
 
   const [editName, setEditName] = useState(backup.name);
-  const [addPath, setAddPath] = useState("add");
+  const [addPath, setAddPath] = useState("add source");
 
   const [editCronline, setEditCronline] = useState(backup.cronLine);
   const [status, setStatus] = useState<BackupStatus>();
@@ -67,6 +67,10 @@ export const BackupStatusPanel = ({
     [tick]
   );
 
+  const canRunNow = () =>
+    status?.runnability.runnable &&
+    (status?.status === "idle" || status?.status === "never-run");
+
   return (
     <div>
       <h3>
@@ -79,18 +83,6 @@ export const BackupStatusPanel = ({
           onReset={() => setEditName(backup.name)}
           value={editName}
         />
-        <button
-          disabled={
-            status?.runnability.runnable !== true ||
-            status?.status === "indexing" ||
-            status?.status === "saving"
-          }
-          onClick={() => runNow({ id: backup.id })}
-        >
-          {status?.status === "idle" || status?.status === "never-run"
-            ? "Run now"
-            : status?.status}
-        </button>
       </h3>
       <ul class="sources-list">
         {backup.sources.map((source) => (
@@ -120,9 +112,9 @@ export const BackupStatusPanel = ({
               editBackup({
                 backup: { ...backup, sources: [...backup.sources, value] },
               });
-              setAddPath("add");
+              setAddPath("add source");
             }}
-            onReset={() => setAddPath("add")}
+            onReset={() => setAddPath("add source")}
           />
         </li>
       </ul>
@@ -160,6 +152,37 @@ export const BackupStatusPanel = ({
         >
           {formatDistanceToNow(nextRun(backup.cronLine))}
         </span>
+        <Bar />
+        {canRunNow() && (
+          <>
+            <span>🏃 </span>
+            <span
+              class="pointer underline"
+              style={{ color: "DarkGray" }}
+              onClick={() => runNow({ id: backup.id })}
+            >
+              run now
+            </span>
+          </>
+        )}
+        {status?.runnability.runnable === false && (
+          <span
+            class="dot-underline"
+            style={{ color: "DarkGray" }}
+            title={
+              "inacessableSources" in status.runnability
+                ? status.runnability.inacessableSources.join(", ")
+                : undefined
+            }
+          >
+            {status.runnability.reason.replace("-", " ")}
+          </span>
+        )}
+        {!canRunNow() && status?.runnability.runnable && (
+          <span style={{ color: "DarkGray" }}>
+            {status.status === "indexing" ? "🔦" : "💾"} {status.status}
+          </span>
+        )}
       </div>
     </div>
   );
