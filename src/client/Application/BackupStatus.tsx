@@ -8,6 +8,7 @@ import { AsEditable } from "../components/AsEditable";
 import { useCommand } from "../hooks/useCommand";
 import { useSubscription } from "../hooks/useSubscription";
 import { useTick } from "../hooks/useTick";
+import filesize from "filesize";
 
 const EditableSpan = AsEditable("span");
 
@@ -73,8 +74,8 @@ export const BackupStatusPanel = ({
 
   return (
     <div>
-      <h3>
-        <span style={{ color: "grey" }}>{repository.path}/</span>
+      <h3 style={{ marginBottom: 0 }}>
+        <span class="grey">{repository.path}/</span>
         <EditableSpan
           onSubmit={(value) =>
             editBackup({ backup: { ...backup, name: value } })
@@ -84,6 +85,9 @@ export const BackupStatusPanel = ({
           value={editName}
         />
       </h3>
+      <span class="italic small bold grey">
+        {status?.branchSize && filesize(status.branchSize, { round: 1 })}
+      </span>
       <ul class="sources-list">
         {backup.sources.map((source) => (
           <li key={source}>
@@ -127,13 +131,13 @@ export const BackupStatusPanel = ({
           onReset={() => setEditCronline(backup.cronLine)}
           value={editCronline}
         />
-        <Bar style={{ color: "DarkGray" }} />
-        <span style={{ color: "DarkGray" }}>
+        <Bar class="grey" />
+        <span class="grey">
           {status?.lastRun ? (
             <>
               <span>ran </span>
               <span
-                class="dot-underline"
+                class="hint"
                 title={new Date(status.lastRun).toLocaleString()}
               >
                 {formatDistanceToNow(new Date(status.lastRun))} ago
@@ -143,11 +147,11 @@ export const BackupStatusPanel = ({
             "never run"
           )}
         </span>
-        <Bar style={{ color: "DarkGray" }} />
-        <span style={{ color: "DarkGray" }}>running in </span>
+        <Bar class="grey" />
+        <span class="grey">running in </span>
         <span
-          class="dot-underline"
-          style={{ color: "DarkGray" }}
+          class="hint"
+          style={{ color: "Darkgrey" }}
           title={nextRun(backup.cronLine).toLocaleString()}
         >
           {formatDistanceToNow(nextRun(backup.cronLine))}
@@ -156,19 +160,14 @@ export const BackupStatusPanel = ({
         {canRunNow() && (
           <>
             <span>🏃 </span>
-            <span
-              class="pointer underline"
-              style={{ color: "DarkGray" }}
-              onClick={() => runNow({ id: backup.id })}
-            >
+            <span class="pointer" onClick={() => runNow({ id: backup.id })}>
               run now
             </span>
           </>
         )}
         {status?.runnability.runnable === false && (
           <span
-            class="dot-underline"
-            style={{ color: "DarkGray" }}
+            class="hint"
             title={
               "inacessableSources" in status.runnability
                 ? status.runnability.inacessableSources.join(", ")
@@ -179,7 +178,7 @@ export const BackupStatusPanel = ({
           </span>
         )}
         {!canRunNow() && status?.runnability.runnable && (
-          <span style={{ color: "DarkGray" }}>
+          <span>
             {status.status === "indexing" ? "🔦" : "💾"} {status.status}
           </span>
         )}

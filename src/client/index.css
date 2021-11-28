@@ -29,8 +29,9 @@ body {
   cursor: pointer;
 }
 
-.dot-underline {
+.hint {
   border-bottom: 1px dashed #999;
+  cursor: help;
 }
 
 .bar {
@@ -45,4 +46,16 @@ body {
 ul.sources-list {
   list-style: none;
   padding-left: 1em;
+}
+
+.grey {
+  color: darkgray;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.bold {
+  font-weight: bold;
 }
