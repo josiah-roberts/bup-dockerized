@@ -30,8 +30,20 @@ export const createWsServer = () => {
     const sendConfig = async () => {
       send(ws, "config", { config: await getConfig() });
     };
+    const sendStatus = async (backupId: string) => {
+      const backup = (await getConfig()).backups.find((x) => x.id === backupId);
+      if (!backup) {
+        send(ws, "client-error", {
+          error: `Backup with id ${backupId} does not exist`,
+        });
+        return;
+      }
+
+      send(ws, "backup-status", { backup, status: "status" });
+    };
 
     addListener("config", sendConfig);
+    addListener("backup-status", sendStatus);
 
     ws.on("message", function incoming(message, isBinary) {
       console.info("WS message: %s", message);
@@ -58,6 +70,7 @@ export const createWsServer = () => {
 
     ws.on("close", () => {
       removeListener("config", sendConfig);
+      removeListener("backup-status", sendStatus);
     });
   });
 

@@ -1,6 +1,14 @@
 FROM node:latest
 
-RUN apt-get update && apt-get install bup -y
+WORKDIR /usr/git
+RUN git clone git://git.kernel.org/pub/scm/git/git.git .
+
+RUN apt-get update && apt-get install gettext bup -y
+
+RUN make configure
+RUN ./configure --prefix=/usr
+RUN make
+RUN make install
 
 WORKDIR /usr/app
 COPY ./package.json /usr/app/package.json

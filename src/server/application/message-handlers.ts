@@ -13,6 +13,7 @@ import { isEmpty, isNil } from "ramda";
 import { parseExpression } from "cron-parser";
 import { rename, run } from "./bup-actions";
 import { emit } from "./events";
+import { determineStatus } from "./status-repository";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
   message: ClientCommand<T>;
@@ -68,6 +69,9 @@ export const messageHandlers: {
   },
   "get-config": async (_, ws) => {
     emit("config");
+  },
+  "get-backup-status": (m, ws) => {
+    emit("backup-status", m.message.id);
   },
   "add-backup": async ({ message }, ws) => {
     if (isEmpty(message.backup.name) || isEmpty(message.backup.sources)) {
@@ -159,6 +163,7 @@ export const messageHandlers: {
     if (!repo) return;
 
     await run(repo, backup);
+    await determineStatus(repo, backup);
   },
   ls: ({ message }, ws) => {
     exec(

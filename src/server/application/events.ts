@@ -1,15 +1,31 @@
 import { EventEmitter } from "events";
+import { Backup } from "../../types/config";
 
 const emitter = new EventEmitter();
+type Events = {
+  config: void;
+  "backup-status": string;
+};
+type EventType = keyof Events;
+type Event<T extends EventType> = Events[T];
 
-export function addListener(event: "config", handler: () => void) {
-  emitter.addListener("config", handler);
+export function addListener<T extends EventType>(
+  event: T,
+  handler: (data: Event<T>) => void
+) {
+  emitter.addListener(event, handler);
 }
 
-export function removeListener(event: "config", handler: () => void) {
+export function removeListener<T extends EventType>(
+  event: T,
+  handler: (data: Event<T>) => void
+) {
   emitter.removeListener(event, handler);
 }
 
-export function emit(event: "config") {
-  emitter.emit("config");
+type EventArgs<T extends EventType> = void extends Event<T>
+  ? [T]
+  : [T, Event<T>];
+export function emit<T extends EventType>(...[event, data]: EventArgs<T>) {
+  emitter.emit(event, data);
 }

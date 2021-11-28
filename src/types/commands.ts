@@ -8,6 +8,10 @@ export type ClientCommandType = (
       type: "get-config";
     }
   | {
+      type: "get-backup-status";
+      id: string;
+    }
+  | {
       type: "ls";
       path: string;
     }
@@ -25,6 +29,11 @@ type ConfigMessage = {
   type: "config";
   config: Config;
 };
+type BackupStatusMessage = {
+  type: "backup-status";
+  backup: Backup;
+  status: string;
+};
 type LsMessage = {
   type: "ls";
   items: string[];
@@ -36,6 +45,7 @@ export type ServerMessageType = { correlation?: string } & (
   | ConfigMessage
   | LsMessage
   | ClientErrorMessage
+  | BackupStatusMessage
 );
 export type ServerMessage<TKey extends ServerMessageType["type"]> = Exclude<
   ServerMessageType,

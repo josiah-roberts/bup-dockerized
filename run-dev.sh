@@ -10,6 +10,5 @@ docker run -it --rm \
   -v `pwd`/bup-dev-config:/system-config \
   -v `pwd`/src:/usr/app/src \
   -p 8080:80 \
-  --user $(id -u):$(id -g) \
   --name bup-dev-watch \
   bup-dev npm run dev
