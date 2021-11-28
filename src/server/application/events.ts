@@ -5,6 +5,7 @@ const emitter = new EventEmitter();
 type Events = {
   config: void;
   "backup-status": BackupStatus;
+  "client-error": string;
 };
 type EventType = keyof Events;
 type Event<T extends EventType> = Events[T];

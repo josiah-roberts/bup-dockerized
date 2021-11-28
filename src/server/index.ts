@@ -7,6 +7,7 @@ import { getConfig } from "./application/config-repository";
 import { initializeRepository, save } from "./application/bup-actions";
 import assert from "assert";
 import { getStatus } from "./application/status-repository";
+import { run } from "./application/run";
 
 const port = 80 as const;
 
@@ -33,8 +34,9 @@ checkEnv("BACKUPS_DIR")
       console.info('Found status for backup "%s":', b.name);
       console.info(status);
     }
+    return config;
   })
-  .then(() => {
+  .then((config) => {
     console.info("\nStarting servers...");
     const server = createServer();
     const wss = createWsServer();
@@ -45,4 +47,13 @@ checkEnv("BACKUPS_DIR")
       .listen(port, () => {
         console.log("HTTP + WS server is hosted on *:%s\n", port);
       });
+
+    setTimeout(
+      () =>
+        run(
+          config.repositories[0],
+          config.backups.find((x) => x.name === "me")!
+        ).catch(() => {}),
+      10000
+    );
   });

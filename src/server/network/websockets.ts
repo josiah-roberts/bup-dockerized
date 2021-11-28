@@ -44,9 +44,13 @@ export const createWsServer = () => {
 
       send(ws, "backup-status", { backup, status });
     };
+    const sendClientError = async (e: string) => {
+      send(ws, "client-error", { error: e });
+    };
 
     addListener("config", sendConfig);
     addListener("backup-status", sendStatus);
+    addListener("client-error", sendClientError);
 
     ws.on("message", function incoming(message, isBinary) {
       console.info("WS message: %s", message);
@@ -74,6 +78,7 @@ export const createWsServer = () => {
     ws.on("close", () => {
       removeListener("config", sendConfig);
       removeListener("backup-status", sendStatus);
+      removeListener("client-error", sendClientError);
     });
   });
 
