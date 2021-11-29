@@ -137,7 +137,10 @@ export function getBranchRevisions(r: Repository, b: Backup) {
 
 export function checkBranchBytes(r: Repository, b: Backup) {
   return new Promise<number | undefined>((res, rej) => {
-    const revList = git(["rev-list", "--disk-usage", "--objects", b.name], r);
+    const revList = git(
+      ["rev-list", "--disk-usage", "--use-bitmap-index", "--objects", b.name],
+      r
+    );
 
     readProcess(revList, (stdout, stderr, code) => {
       const error = stderr.join("\n").trim();

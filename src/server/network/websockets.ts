@@ -42,7 +42,7 @@ export const createWsServer = () => {
         return;
       }
 
-      send(ws, "backup-status", { backup, status });
+      send(ws, "backup-status", { status });
     };
     const sendClientError = async (e: string) => {
       send(ws, "client-error", { error: e });

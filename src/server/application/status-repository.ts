@@ -1,3 +1,4 @@
+import { readFile, writeFile } from "fs/promises";
 import { Backup, Repository } from "../../types/config";
 import { lstat } from "fs";
 import {
@@ -5,8 +6,55 @@ import {
   checkBranchBytes,
   getBranchRevisions,
 } from "./bup-actions";
-import { BackupStatus, Runnability, RunningStatus } from "../../types/status";
+import {
+  BackupStatus,
+  Runnability,
+  RunningStatus,
+  SizeInfo,
+} from "../../types/status";
 import { emit } from "./events";
+import { once } from "ramda";
+import { getConfigDir } from "./config-repository";
+
+let _sizeCache: Map<string, SizeInfo>;
+const loadSizeCache = once(() =>
+  readFile(`${getConfigDir()}/size-cache.json`)
+    .then((buffer) => buffer.toString())
+    .then<typeof _sizeCache>((json: string) => {
+      const entries: { id: string; asOf: string; bytes: number }[] =
+        JSON.parse(json);
+
+      return new Map(
+        entries.map(({ id, asOf, bytes }) => [
+          id,
+          {
+            id,
+            bytes,
+            asOf: new Date(asOf),
+          },
+        ])
+      );
+    })
+    .catch((e) => {
+      console.warn(e);
+      return new Map<string, SizeInfo>();
+    })
+);
+const getSizeCache = async () =>
+  (_sizeCache = _sizeCache ?? (await loadSizeCache()));
+
+let writingPromise = Promise.resolve();
+const writeSizeCache = (cache: typeof _sizeCache) =>
+  (writingPromise = writingPromise.then(() => {
+    const json = JSON.stringify([...cache.values()]);
+    return writeFile(`${getConfigDir()}/size-cache.json`, json);
+  }));
+
+export async function updateSizeCache(id: string, sizeInfo: SizeInfo) {
+  const sizeCache = await getSizeCache();
+  sizeCache.set(id, sizeInfo);
+  writeSizeCache(sizeCache); // No need to wait for completion
+}
 
 const statusMap: { [id: string]: BackupStatus } = {};
 
@@ -52,6 +100,40 @@ function getInitialStatusSummary(revisions: Date[] | undefined) {
     : ("never-run" as const);
 }
 
+const rebuildJobs: { [backupId: string]: Promise<void> | undefined } = {};
+
+async function handleRebuildSize(
+  lastRun: Date | undefined,
+  repository: Repository,
+  backup: Backup
+): Promise<SizeInfo | undefined> {
+  if (!lastRun) {
+    return undefined;
+  }
+
+  const cachedSize = (await getSizeCache()).get(backup.id);
+  if (
+    (!cachedSize || cachedSize.asOf < lastRun) &&
+    rebuildJobs[backup.id] === undefined
+  ) {
+    rebuildJobs[backup.id] = checkBranchBytes(repository, backup)
+      .then(async (bytes) => {
+        if (bytes !== undefined) {
+          await updateSizeCache(backup.id, {
+            asOf: new Date(),
+            id: backup.id,
+            bytes,
+          });
+          await rebuildStatus(repository, backup);
+          rebuildJobs[backup.id] = undefined;
+        }
+      })
+      .catch((e) => console.error(e));
+  }
+
+  return cachedSize;
+}
+
 async function rebuildStatus(
   repository: Repository,
   backup: Backup
@@ -64,8 +146,8 @@ async function rebuildStatus(
     }))
   );
   const lastRun = await checkBranchCommited(repository, backup);
-  const branchSize = await checkBranchBytes(repository, backup);
   const revisions = await getBranchRevisions(repository, backup);
+  const branchSize = await handleRebuildSize(lastRun, repository, backup);
 
   const status = {
     backupId: backup.id,

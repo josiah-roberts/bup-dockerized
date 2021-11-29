@@ -72,6 +72,13 @@ export const BackupStatusPanel = ({
     status?.runnability.runnable &&
     (status?.status === "idle" || status?.status === "never-run");
 
+  const isRecomputingSize = () =>
+    status?.lastRun &&
+    status.branchSize &&
+    status.status !== "indexing" &&
+    status.status !== "saving" &&
+    new Date(status.lastRun) > new Date(status.branchSize.asOf);
+
   return (
     <div>
       <h3 style={{ marginBottom: 0 }}>
@@ -85,9 +92,21 @@ export const BackupStatusPanel = ({
           value={editName}
         />
       </h3>
-      <span class="italic small bold grey">
-        {status?.branchSize && filesize(status.branchSize, { round: 1 })}
-      </span>
+      {status?.lastRun && !status?.branchSize && (
+        <span class="italic small bold grey">Computing size...</span>
+      )}
+      {status?.lastRun && status.branchSize && (
+        <>
+          <span class="italic small bold grey">
+            {filesize(status.branchSize.bytes, { round: 1 })}
+          </span>
+          {isRecomputingSize() && (
+            <span class="small grey" title="recomputing">
+              ⌛ recomputing...
+            </span>
+          )}
+        </>
+      )}
       <ul class="sources-list">
         {backup.sources.map((source) => (
           <li key={source}>

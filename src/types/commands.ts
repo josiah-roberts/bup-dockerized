@@ -32,7 +32,6 @@ type ConfigMessage = {
 };
 type BackupStatusMessage = {
   type: "backup-status";
-  backup: Backup;
   status: BackupStatus;
 };
 type LsMessage = {

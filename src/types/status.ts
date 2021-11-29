@@ -10,6 +10,8 @@ export type Runnability =
       inacessableSources: string[];
     };
 
+export type SizeInfo = { id: string; asOf: Date; bytes: number };
+
 export type BackupStatus = {
   backupId: string;
   repoAccessable: boolean;
@@ -19,7 +21,7 @@ export type BackupStatus = {
   }[];
   runnability: Runnability;
   lastRun: Date | undefined;
-  branchSize: number | undefined;
+  branchSize: SizeInfo | undefined;
   revisions: Date[] | undefined;
   status: StatusSummary;
 };

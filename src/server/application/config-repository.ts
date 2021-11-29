@@ -15,7 +15,7 @@ const defaultConfig = (): Config => ({
   backups: [],
 });
 
-const getConfigDir = () => {
+export const getConfigDir = () => {
   const configDir = process.env["CONFIG_DIR"];
   assert(configDir);
   return configDir;
