@@ -1,4 +1,4 @@
-import { Backup, Repository } from "../../types/config";
+import { Backup } from "../../types/config";
 import { index, save } from "./bup-actions";
 import { emit } from "./events";
 import {
@@ -7,8 +7,8 @@ import {
   setRunningStatus,
 } from "./status-repository";
 
-export async function run(r: Repository, b: Backup) {
-  const status = await getStatus(r, b);
+export async function run(b: Backup) {
+  const status = await getStatus(b);
   if (!status.runnability.runnable) {
     emit(
       "client-error",
@@ -21,13 +21,13 @@ export async function run(r: Repository, b: Backup) {
   }
 
   try {
-    setRunningStatus(r, b, "indexing");
+    setRunningStatus(b, "indexing");
     for (const source of b.sources) {
-      await index(r, source);
+      await index(b, source);
     }
-    setRunningStatus(r, b, "saving");
-    await save(r, b);
+    setRunningStatus(b, "saving");
+    await save(b);
   } finally {
-    clearRunningStatus(r, b);
+    clearRunningStatus(b);
   }
 }

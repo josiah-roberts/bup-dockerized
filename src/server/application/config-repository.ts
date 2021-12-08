@@ -1,18 +1,12 @@
 import { readFile, writeFile } from "fs/promises";
 import { once, sortBy } from "ramda";
 import assert from "assert";
-import { Config } from "../../types/config";
+import { Backup, Config } from "../../types/config";
 import { addShutdownTask } from "../utils/shutdown";
 
 const defaultConfig = (): Config => ({
-  repositories: [
-    {
-      name: "default",
-      status: "un-initialized",
-      path: `${process.env["BACKUPS_DIR"]}/default`,
-    },
-  ],
   backups: [],
+  rootPath: getBackupsDir(),
 });
 
 export const getConfigDir = () => {
@@ -20,6 +14,14 @@ export const getConfigDir = () => {
   assert(configDir);
   return configDir;
 };
+
+export const getBackupsDir = () => {
+  const backupsDir = process.env["BACKUPS_DIR"];
+  assert(backupsDir);
+  return backupsDir;
+};
+
+export const getBackupDir = (b: Backup) => `${getBackupsDir()}/${b.name}`;
 
 let inMemoryConfig: Config;
 const loadConfig = once(() =>
@@ -30,7 +32,7 @@ const loadConfig = once(() =>
       console.warn(e);
       return defaultConfig();
     })
-    .then((config) => setConfig(config))
+    .then((config) => setConfig({ ...config, rootPath: getBackupsDir() }))
 );
 
 let writing = false;
@@ -52,7 +54,7 @@ export const getConfig = () => inMemoryConfig ?? loadConfig();
 export const setConfig = (newConfig: Config) => {
   const configToWrite = {
     ...newConfig,
-    backups: sortBy((b) => b.repository + b.name, newConfig.backups),
+    backups: sortBy((b) => b.name, newConfig.backups),
   };
   inMemoryConfig = configToWrite;
   return writeConfig();

@@ -1,31 +1,33 @@
-import { Repository, Backup } from "../../types/config";
+import { Backup } from "../../types/config";
 import {
   spawn,
   SpawnOptionsWithoutStdio,
   ChildProcessWithoutNullStreams,
 } from "child_process";
+import { getBackupDir } from "./config-repository";
+import { rename as fsRename } from "fs/promises";
 
-function bup(
-  args: string[],
-  repo: Repository,
-  options?: SpawnOptionsWithoutStdio
-) {
+function bup(args: string[], repo: string, options?: SpawnOptionsWithoutStdio) {
   const spawned = spawn("bup", args, {
     ...options,
-    env: { BUP_DIR: repo.path, ...options?.env },
+    env: { BUP_DIR: repo, ...options?.env },
   });
   console.info(spawned.spawnargs.join(" "));
   return spawned;
 }
 
-function git(
-  args: string[],
-  repo: Repository,
-  options?: SpawnOptionsWithoutStdio
-) {
+function git(args: string[], repo: string, options?: SpawnOptionsWithoutStdio) {
   const spawned = spawn("git", ["--no-pager", ...args], {
     ...options,
-    env: { GIT_DIR: repo.path, ...options?.env },
+    env: { GIT_DIR: repo, ...options?.env },
+  });
+  console.info(spawned.spawnargs.join(" "));
+  return spawned;
+}
+
+function du(args: string[], options?: SpawnOptionsWithoutStdio) {
+  const spawned = spawn("du", args, {
+    ...options,
   });
   console.info(spawned.spawnargs.join(" "));
   return spawned;
@@ -52,7 +54,7 @@ function readProcess(
   });
 }
 
-export function initializeRepository(r: Repository) {
+export function initializeRepository(r: string) {
   return new Promise<void>((res, rej) => {
     const init = bup(["init"], r);
     readProcess(init, (stdout, stderr, code) => {
@@ -62,9 +64,9 @@ export function initializeRepository(r: Repository) {
   });
 }
 
-export function index(r: Repository, source: string) {
+export function index(b: Backup, source: string) {
   return new Promise<void>((res, rej) => {
-    const index = bup(["index", "-v", "-v", source], r, {
+    const index = bup(["index", "-v", "-v", source], getBackupDir(b), {
       env: { BUP_SOURCE: source },
     });
     readProcess(index, (stdout, stderr, code) => {
@@ -74,13 +76,13 @@ export function index(r: Repository, source: string) {
   });
 }
 
-export function save(r: Repository, b: Backup) {
+export function save(b: Backup) {
   return new Promise<void>((res, rej) => {
     const pathPairs = b.sources.map((p, i) => [`BUP_PATH_${i}`, p]);
 
     const save = bup(
       ["save", "-v", "-v", `--name=${b.name}`, ...pathPairs.map(([, p]) => p)],
-      r
+      getBackupDir(b)
     );
     readProcess(save, (stdout, stderr, code) => {
       if (code === 0) res();
@@ -89,19 +91,24 @@ export function save(r: Repository, b: Backup) {
   });
 }
 
-export function rename(r: Repository, oldName: string, newName: string) {
+/**
+ * Renames the backup's branch name, and moves the backup to a new location
+ */
+export function rename(b: Backup, newName: string) {
   return new Promise<void>((res, rej) => {
-    const mv = git(["branch", "-m", oldName, newName], r);
+    const mv = git(["branch", "-m", b.name, newName], getBackupDir(b));
     readProcess(mv, (stdout, stderr, code) => {
       if (code === 0) res();
       else rej(code);
     });
-  });
+  }).then(() =>
+    fsRename(getBackupDir(b), getBackupDir({ ...b, name: newName }))
+  );
 }
 
-export function checkBranchCommited(r: Repository, b: Backup) {
+export function checkBranchCommited(b: Backup) {
   return new Promise<Date | undefined>((res, rej) => {
-    const branch = git(["log", "-1", "--format=%ct", b.name], r);
+    const branch = git(["log", "-1", "--format=%ct", b.name], getBackupDir(b));
 
     readProcess(branch, (stdout, stderr, code) => {
       const error = stderr.join("\n").trim();
@@ -118,9 +125,9 @@ export function checkBranchCommited(r: Repository, b: Backup) {
   });
 }
 
-export function getBranchRevisions(r: Repository, b: Backup) {
+export function getBranchRevisions(b: Backup) {
   return new Promise<Date[] | undefined>((res, rej) => {
-    const log = git(["log", "--pretty=%aI", b.name], r);
+    const log = git(["log", "--pretty=%aI", b.name], getBackupDir(b));
     readProcess(log, (stdout, stderr, code) => {
       const error = stderr.join("\n").trim();
 
@@ -135,19 +142,16 @@ export function getBranchRevisions(r: Repository, b: Backup) {
   });
 }
 
-export function checkBranchBytes(r: Repository, b: Backup) {
+export function checkBranchBytes(b: Backup) {
   return new Promise<number | undefined>((res, rej) => {
-    const revList = git(
-      ["rev-list", "--disk-usage", "--use-bitmap-index", "--objects", b.name],
-      r
-    );
+    const revList = du(["-sb", getBackupDir(b)]);
 
     readProcess(revList, (stdout, stderr, code) => {
       const error = stderr.join("\n").trim();
       const output = stdout.join("\n").trim();
 
       if (code === 0 && !error) {
-        res(Number(output));
+        res(Number(output.match(/[0-9]+/)?.[0]));
       } else if (error.includes("unknown revision")) {
         res(undefined);
       } else {

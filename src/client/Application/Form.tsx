@@ -67,7 +67,6 @@ export const Form = () => {
                 name: newBackupName,
                 sources: newBackupSources.split(","),
                 cronLine: newBackupCronLine,
-                repository: "default",
                 id: nanoid(),
               },
             })

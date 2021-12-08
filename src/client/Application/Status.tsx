@@ -9,21 +9,15 @@ export const Status = ({
 }) => {
   return (
     <div class="card">
-      {config.repositories.map((repository) => (
-        <div>
-          {config.backups
-            .filter((x) => x.repository === repository.name)
-            .map((backup) => (
-              <>
-                <BackupStatusPanel
-                  key={backup.id}
-                  backup={backup}
-                  repository={repository}
-                />
-                <hr />
-              </>
-            ))}
-        </div>
+      {config.backups.map((backup) => (
+        <>
+          <BackupStatusPanel
+            key={backup.id}
+            backup={backup}
+            rootPath={config.rootPath}
+          />
+          <hr />
+        </>
       ))}
     </div>
   );

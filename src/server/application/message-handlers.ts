@@ -6,12 +6,12 @@ import {
   ServerMessageType,
 } from "../../types/commands";
 import { spawn, exec } from "child_process";
-import { getConfig, setConfig } from "./config-repository";
+import { getBackupDir, getConfig, setConfig } from "./config-repository";
 import { getAnyCorrelation } from "../utils/correlation";
 import { DistributiveOmit } from "../../types/util";
 import { isEmpty } from "ramda";
 import { parseExpression } from "cron-parser";
-import { rename } from "./bup-actions";
+import { initializeRepository, rename } from "./bup-actions";
 import { emit } from "./events";
 import { getStatus, recomputeStatus } from "./status-repository";
 import { run } from "./run";
@@ -72,18 +72,17 @@ export const messageHandlers: {
     });
   },
   "get-config": async (_, ws) => {
-    emit("config");
+    send(ws, "config", { config: await getConfig() });
   },
   "get-backup-status": async (m, ws) => {
     const config = await getConfig();
     const backup = config.backups.find((x) => x.id === m.message.id);
-    const repo = config.repositories.find((x) => x.name === backup?.repository);
-    if (!backup || !repo) {
+    if (!backup) {
       clientError(`Backup with id ${m.message.id} does not exist`, ws);
       return;
     }
 
-    emit("backup-status", await getStatus(repo, backup));
+    emit("backup-status", await getStatus(backup));
   },
   "add-backup": async ({ message }, ws) => {
     if (isEmpty(message.backup.name) || isEmpty(message.backup.sources)) {
@@ -113,6 +112,8 @@ export const messageHandlers: {
       backups: [...config.backups, message.backup],
     });
 
+    await initializeRepository(getBackupDir(message.backup));
+
     emit("config");
   },
   "remove-backup": async ({ message }, ws) => {
@@ -133,8 +134,7 @@ export const messageHandlers: {
   "edit-backup": async ({ message }, ws) => {
     const config = await getConfig();
     const backup = config.backups.find((x) => x.id === message.backup.id);
-    const repo = config.repositories.find((x) => x.name === backup?.repository);
-    if (!backup || !repo) {
+    if (!backup) {
       clientError(`Backup with id ${message.backup.id} does not exist`, ws);
       return;
     }
@@ -148,11 +148,6 @@ export const messageHandlers: {
       return;
     }
 
-    if (backup.repository !== message.backup.repository) {
-      clientError("Cannot change backup repository", ws);
-      return;
-    }
-
     if (!cronIsValid(message.backup.cronLine)) {
       send(ws, "client-error", {
         error: `Invalid cron line`,
@@ -161,7 +156,7 @@ export const messageHandlers: {
     }
 
     if (message.backup.name !== backup.name) {
-      await rename(repo, backup.name, message.backup.name);
+      await rename(backup, message.backup.name);
     }
 
     await setConfig({
@@ -171,7 +166,7 @@ export const messageHandlers: {
         .concat(message.backup),
     });
 
-    await recomputeStatus(repo, message.backup);
+    await recomputeStatus(message.backup);
     emit("config");
   },
   "run-now": async ({ message }, ws) => {
@@ -179,10 +174,7 @@ export const messageHandlers: {
     const backup = config.backups.find((x) => x.id === message.id);
     if (!backup) return;
 
-    const repo = config.repositories.find((x) => x.name === backup.repository);
-    if (!repo) return;
-
-    await run(repo, backup);
+    await run(backup);
   },
   ls: ({ message }, ws) => {
     exec(

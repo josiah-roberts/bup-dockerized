@@ -2,7 +2,7 @@ import { parseExpression } from "cron-parser";
 import formatDistanceToNow from "date-fns/formatDistanceToNow";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import { JSX } from "preact/jsx-runtime";
-import { Backup, Repository } from "../../types/config";
+import { Backup } from "../../types/config";
 import { BackupStatus } from "../../types/status";
 import { AsEditable } from "../components/AsEditable";
 import { useCommand } from "../hooks/useCommand";
@@ -18,10 +18,10 @@ const Bar = (props: JSX.IntrinsicElements["span"]) => (
 
 export const BackupStatusPanel = ({
   backup,
-  repository,
+  rootPath,
 }: {
   backup: Backup;
-  repository: Repository;
+  rootPath: string;
 }) => {
   const tick = useTick(60_000);
 
@@ -57,7 +57,12 @@ export const BackupStatusPanel = ({
     "backup-status",
     useCallback(
       (m) => {
-        setStatus(m.status);
+        // We aren't limiting to correlation,
+        // so we need to filter out status changes for other
+        // backups
+        if (m.status.backupId === backup.id) {
+          setStatus(m.status);
+        }
       },
       [rn, gs, eb]
     )
@@ -72,17 +77,10 @@ export const BackupStatusPanel = ({
     status?.runnability.runnable &&
     (status?.status === "idle" || status?.status === "never-run");
 
-  const isRecomputingSize = () =>
-    status?.lastRun &&
-    status.branchSize &&
-    status.status !== "indexing" &&
-    status.status !== "saving" &&
-    new Date(status.lastRun) > new Date(status.branchSize.asOf);
-
   return (
     <div>
       <h3 style={{ marginBottom: 0 }}>
-        <span class="grey">{repository.path}/</span>
+        <span class="grey">{rootPath}/</span>
         <EditableSpan
           onSubmit={(value) =>
             editBackup({ backup: { ...backup, name: value } })
@@ -98,13 +96,8 @@ export const BackupStatusPanel = ({
       {status?.lastRun && status.branchSize && (
         <>
           <span class="italic small bold grey">
-            {filesize(status.branchSize.bytes, { round: 1 })}
+            {filesize(status.branchSize, { round: 1 })}
           </span>
-          {isRecomputingSize() && (
-            <span class="small grey" title="recomputing">
-              ⌛ recomputing...
-            </span>
-          )}
         </>
       )}
       <ul class="sources-list">

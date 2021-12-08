@@ -3,10 +3,11 @@ import "source-map-support/register";
 import { checkEnv } from "./utils/check-env";
 import { createWsServer, wsUpgradeHandler } from "./network/websockets";
 import { staticHandler } from "./network/static";
-import { getConfig } from "./application/config-repository";
-import { initializeRepository } from "./application/bup-actions";
-import assert from "assert";
+import { getBackupDir, getConfig } from "./application/config-repository";
 import { getStatus } from "./application/status-repository";
+import { initializeRepository } from "./application/bup-actions";
+import { maintainRunners } from "./application/cron";
+import { addListener } from "./application/events";
 
 const port = 80 as const;
 
@@ -16,28 +17,24 @@ checkEnv("BACKUPS_DIR")
   .then(() => checkEnv("CONFIG_DIR"))
   .then(() => getConfig())
   .then(async (config) => {
-    console.info("\n### Initializing repositories... ###\n");
-    for (const r of config.repositories) {
-      await initializeRepository(r);
-    }
-    return config;
-  })
-  .then(async (config) => {
     console.info("\n### Determining backup status... ###\n");
     console.info(`Found ${config.backups.length} backups`);
 
     for (const b of config.backups) {
-      const repository = config.repositories.find(
-        (x) => x.name === b.repository
-      );
-      assert(repository);
-      const status = await getStatus(repository, b);
+      await initializeRepository(getBackupDir(b));
+      const status = await getStatus(b);
       console.info('Found status for backup "%s":', b.name);
       console.info(status);
     }
     return config;
   })
   .then((config) => {
+    maintainRunners(config);
+    addListener("config", async () => {
+      maintainRunners(await getConfig());
+    });
+  })
+  .then(() => {
     console.info("\nStarting servers...");
     const server = createServer();
     const wss = createWsServer();
