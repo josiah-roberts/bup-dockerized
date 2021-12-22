@@ -1,5 +1,5 @@
 {
-  "name": "bup-backend",
+  "name": "bup-dockerized",
   "version": "1.0.0",
   "description": "",
   "main": "bin/index.js",
@@ -15,10 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/cron": "^1.7.3",
-    "@types/ramda": "^0.27.49",
-    "@types/serve-handler": "^6.1.1",
-    "@types/ws": "^8.2.0",
     "concurrently": "^6.4.0",
     "cron": "^1.8.2",
     "cron-parser": "^4.1.0",
@@ -32,6 +28,10 @@
     "ws": "^8.2.3"
   },
   "devDependencies": {
+    "@types/cron": "^1.7.3",
+    "@types/ramda": "^0.27.49",
+    "@types/serve-handler": "^6.1.1",
+    "@types/ws": "^8.2.0",
     "css-loader": "^6.5.1",
     "html-webpack-plugin": "^5.5.0",
     "mini-css-extract-plugin": "^2.4.4",
