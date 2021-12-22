@@ -3,6 +3,7 @@ import { once, sortBy } from "ramda";
 import assert from "assert";
 import { Backup, Config } from "../../types/config";
 import { addShutdownTask } from "../utils/shutdown";
+import { defaultBackupsPath, defaultConfigPath } from "../utils/check-env";
 
 const defaultConfig = (): Config => ({
   backups: [],
@@ -10,13 +11,13 @@ const defaultConfig = (): Config => ({
 });
 
 export const getConfigDir = () => {
-  const configDir = process.env["CONFIG_DIR"];
+  const configDir = process.env["CONFIG_DIR"] ?? defaultConfigPath;
   assert(configDir);
   return configDir;
 };
 
 export const getBackupsDir = () => {
-  const backupsDir = process.env["BACKUPS_DIR"];
+  const backupsDir = process.env["BACKUPS_DIR"] ?? defaultBackupsPath;
   assert(backupsDir);
   return backupsDir;
 };

@@ -1,23 +1,22 @@
 import fs from "fs";
 
-export function checkEnv(variableName: string) {
+export const defaultConfigPath = "/config";
+export const defaultBackupsPath = "/backups";
+
+export function checkEnv(variableName: string, defaultPath: string) {
   return new Promise<void>((res, rej) => {
-    const value = process.env[variableName];
-    if (!value) {
-      rej(new Error(`${variableName} is not configured!`));
-    } else {
-      fs.access(value, (e) => {
-        if (e) {
-          rej(
-            new Error(
-              `Could not access ${variableName} ${process.env[variableName]}\n${e}`
-            )
-          );
-        } else {
-          console.info("Found %s %s", variableName, process.env[variableName]);
-          res();
-        }
-      });
-    }
+    const path = process.env[variableName] ?? defaultPath;
+    fs.access(path, (e) => {
+      if (e) {
+        rej(
+          new Error(
+            `Could not access ${path}. To override, set ${variableName}\n${e}`
+          )
+        );
+      } else {
+        console.info("Found %s %s", path);
+        res();
+      }
+    });
   });
 }

@@ -1,6 +1,10 @@
 import { createServer } from "http";
 import "source-map-support/register";
-import { checkEnv } from "./utils/check-env";
+import {
+  checkEnv,
+  defaultBackupsPath,
+  defaultConfigPath,
+} from "./utils/check-env";
 import { createWsServer, wsUpgradeHandler } from "./network/websockets";
 import { staticHandler } from "./network/static";
 import { getBackupDir, getConfig } from "./application/config-repository";
@@ -13,8 +17,8 @@ const port = 80 as const;
 
 console.info("\n### Starting application... ###\n");
 
-checkEnv("BACKUPS_DIR")
-  .then(() => checkEnv("CONFIG_DIR"))
+checkEnv("BACKUPS_DIR", defaultBackupsPath)
+  .then(() => checkEnv("CONFIG_DIR", defaultConfigPath))
   .then(() => getConfig())
   .then(async (config) => {
     console.info("\n### Determining backup status... ###\n");
