@@ -10,7 +10,7 @@ import { getBackupDir, getConfig, setConfig } from "./config-repository";
 import { getAnyCorrelation } from "../utils/correlation";
 import { DistributiveOmit } from "../../types/util";
 import { isEmpty } from "ramda";
-import { parseExpression } from "cron-parser";
+import { time } from "cron";
 import { initializeRepository, rename } from "./bup-actions";
 import { emit } from "./events";
 import { getStatus, recomputeStatus } from "./status-repository";
@@ -36,7 +36,7 @@ function cronIsValid(cronLine: string) {
   if (itemCount < 5 || itemCount > 6) return false;
 
   try {
-    parseExpression(cronLine);
+    time(cronLine);
     return true;
   } catch {
     return false;

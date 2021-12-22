@@ -18,7 +18,7 @@ export const AddNewBackup = () => {
               backup: {
                 name,
                 sources: [],
-                cronLine: "0 * * * *",
+                cronLine: "0 0 * * *",
                 id: nanoid(),
               },
             });
