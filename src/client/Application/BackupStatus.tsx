@@ -81,7 +81,8 @@ export const BackupStatusPanel = ({
   return (
     <div>
       <button
-        style="all: unset; float: right; font-size: 2em; margin-top: -0.25em; cursor: pointer;"
+        class="unset"
+        style="float: right; font-size: 2em; margin-top: -0.25em; cursor: pointer;"
         onClick={() => {
           const confirmation = confirm(
             `Are you sure you want to remove "${backup.name}"?\n\nThis backup will be disabled, and any executing operations will run to completion.\n\nBackup output at ${rootPath}/${backup.name} will not be removed.`

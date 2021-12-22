@@ -7,9 +7,10 @@ export const AddNewBackup = () => {
   useSubscription("client-error", ({ error }) => alert(error), [ab]);
 
   return (
-    <div class="card">
+    <div class="card" style={{ paddingTop: "0.8em" }}>
       <button
-        style={{ all: "unset", cursor: "pointer", fontWeight: "bold" }}
+        class="unset"
+        style={{ cursor: "pointer", fontWeight: "bold" }}
         onClick={() => {
           const name = prompt("Backup name:");
           if (name) {
