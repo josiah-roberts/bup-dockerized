@@ -5,11 +5,8 @@ import { useCommand } from "../hooks/useCommand";
 import { Config } from "../../types/config";
 import { ServerMessage } from "../../types/commands";
 import { Status } from "./Status";
-import { nanoid } from "nanoid";
 import { useSubscription } from "../hooks/useSubscription";
-import { AsEditable } from "../components/AsEditable";
-
-const EditableH2 = AsEditable("h2");
+import { AddNewBackup } from "./AddNewBackup";
 
 export const Form = () => {
   const [config, setConfig] = useState<Config>();
@@ -21,11 +18,7 @@ export const Form = () => {
     [setConfig]
   );
 
-  const [getConfig, gc] = useCommand("get-config");
-
-  const [addBackup, ab] = useCommand("add-backup");
-
-  useSubscription("client-error", ({ error }) => alert(error), [ab]);
+  const [getConfig] = useCommand("get-config");
 
   useSubscription("config", handleConfig);
 
@@ -39,27 +32,8 @@ export const Form = () => {
 
   return (
     <>
+      <AddNewBackup />
       {config && config.backups.length > 0 && <Status config={config} />}
-      <div class="card">
-        <button
-          style={{ all: "unset", cursor: "pointer", fontWeight: "bold" }}
-          onClick={() => {
-            const name = prompt("Backup name:");
-            if (name) {
-              addBackup({
-                backup: {
-                  name,
-                  sources: [],
-                  cronLine: "0 * * * *",
-                  id: nanoid(),
-                },
-              });
-            }
-          }}
-        >
-          Add a backup...
-        </button>
-      </div>
     </>
   );
 };
