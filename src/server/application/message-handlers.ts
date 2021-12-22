@@ -85,7 +85,7 @@ export const messageHandlers: {
     emit("backup-status", await getStatus(backup));
   },
   "add-backup": async ({ message }, ws) => {
-    if (isEmpty(message.backup.name) || isEmpty(message.backup.sources)) {
+    if (isEmpty(message.backup.name)) {
       send(ws, "client-error", {
         error: `Missing required info`,
       });

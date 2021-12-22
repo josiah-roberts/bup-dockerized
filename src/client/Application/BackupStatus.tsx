@@ -23,7 +23,7 @@ export const BackupStatusPanel = ({
   backup: Backup;
   rootPath: string;
 }) => {
-  const tick = useTick(60_000);
+  const tick = useTick(10_000);
 
   const [editName, setEditName] = useState(backup.name);
   const [addPath, setAddPath] = useState("add source");
@@ -34,6 +34,7 @@ export const BackupStatusPanel = ({
   const [runNow, rn] = useCommand("run-now");
   const [editBackup, eb] = useCommand("edit-backup");
   const [getStatus, gs] = useCommand("get-backup-status");
+  const [removeBackup, rb] = useCommand("remove-backup");
 
   useEffect(() => {
     getStatus({ id: backup.id });
@@ -79,7 +80,20 @@ export const BackupStatusPanel = ({
 
   return (
     <div>
-      <h3 style={{ marginBottom: 0 }}>
+      <button
+        style="all: unset; float: right; font-size: 2em; margin-top: -0.25em; cursor: pointer;"
+        onClick={() => {
+          const confirmation = confirm(
+            `Are you sure you want to remove "${backup.name}"?\n\nThis backup will be disabled, and any executing operations will run to completion.\n\nBackup output at ${rootPath}/${backup.name} will not be removed.`
+          );
+          if (confirmation) {
+            removeBackup({ id: backup.id });
+          }
+        }}
+      >
+        ×
+      </button>
+      <h3 style={{ marginBottom: 0, marginTop: "0.25em" }}>
         <span class="grey">{rootPath}/</span>
         <EditableSpan
           onSubmit={(value) =>
@@ -119,6 +133,7 @@ export const BackupStatusPanel = ({
             </span>
           </li>
         ))}
+        {backup.sources.length === 0 && <li class="grey italic">no sources</li>}
         <li>
           <EditableSpan
             class="small underline pointer"

@@ -65,4 +65,11 @@ export function maintainRunners(config: Config) {
       newJob.start();
     }
   }
+
+  for (const [id, task] of Object.entries(tasks)) {
+    if (id && task && !config.backups.some((b) => b.id === id)) {
+      console.info(`Stopping backup because it has been removed ${id}`);
+      task.job.stop();
+    }
+  }
 }

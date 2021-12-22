@@ -7,12 +7,12 @@ import { ServerMessage } from "../../types/commands";
 import { Status } from "./Status";
 import { nanoid } from "nanoid";
 import { useSubscription } from "../hooks/useSubscription";
+import { AsEditable } from "../components/AsEditable";
+
+const EditableH2 = AsEditable("h2");
 
 export const Form = () => {
   const [config, setConfig] = useState<Config>();
-  const [newBackupName, setNewBackupName] = useState<string>("");
-  const [newBackupSources, setNewBackupSources] = useState<string>("");
-  const [newBackupCronLine, setNewBackupCronLine] = useState<string>("");
 
   const handleConfig = useCallback(
     ({ config }: ServerMessage<"config">) => {
@@ -24,7 +24,6 @@ export const Form = () => {
   const [getConfig, gc] = useCommand("get-config");
 
   const [addBackup, ab] = useCommand("add-backup");
-  const [removeBackup, rb] = useCommand("remove-backup");
 
   useSubscription("client-error", ({ error }) => alert(error), [ab]);
 
@@ -40,50 +39,26 @@ export const Form = () => {
 
   return (
     <>
-      {config && <Status config={config} />}
+      {config && config.backups.length > 0 && <Status config={config} />}
       <div class="card">
-        <input
-          type="text"
-          placeholder="name"
-          onInput={(e) => setNewBackupName(e.currentTarget.value)}
-          value={newBackupName}
-        />
-        <input
-          type="text"
-          placeholder="comma-separated sources"
-          onInput={(e) => setNewBackupSources(e.currentTarget.value)}
-          value={newBackupSources}
-        />
-        <input
-          type="text"
-          placeholder="cron line"
-          onInput={(e) => setNewBackupCronLine(e.currentTarget.value)}
-          value={newBackupCronLine}
-        />
         <button
-          onClick={() =>
-            addBackup({
-              backup: {
-                name: newBackupName,
-                sources: newBackupSources.split(","),
-                cronLine: newBackupCronLine,
-                id: nanoid(),
-              },
-            })
-          }
+          style={{ all: "unset", cursor: "pointer", fontWeight: "bold" }}
+          onClick={() => {
+            const name = prompt("Backup name:");
+            if (name) {
+              addBackup({
+                backup: {
+                  name,
+                  sources: [],
+                  cronLine: "0 * * * *",
+                  id: nanoid(),
+                },
+              });
+            }
+          }}
         >
-          Add backup
+          Add a backup...
         </button>
-        <ul>
-          {config?.backups.map(({ name, id, sources }) => (
-            <li key={name}>
-              {name}: {sources.join(" ")}
-              <button type="button" onClick={() => removeBackup({ id })}>
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
       </div>
     </>
   );
