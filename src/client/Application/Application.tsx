@@ -4,11 +4,11 @@ import { useOpened } from "../hooks/useOpened";
 import { useCommand } from "../hooks/useCommand";
 import { Config } from "../../types/config";
 import { ServerMessage } from "../../types/commands";
-import { Status } from "./Status";
+import { BackupsList } from "./BackupsList";
 import { useSubscription } from "../hooks/useSubscription";
 import { AddNewBackup } from "./AddNewBackup";
 
-export const Form = () => {
+export const Application = () => {
   const [config, setConfig] = useState<Config>();
 
   const handleConfig = useCallback(
@@ -19,7 +19,6 @@ export const Form = () => {
   );
 
   const [getConfig] = useCommand("get-config");
-
   useSubscription("config", handleConfig);
 
   useOpened(() => {
@@ -33,7 +32,7 @@ export const Form = () => {
   return (
     <>
       <AddNewBackup />
-      {config && config.backups.length > 0 && <Status config={config} />}
+      {config && config.backups.length > 0 && <BackupsList config={config} />}
     </>
   );
 };

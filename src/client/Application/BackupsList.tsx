@@ -1,7 +1,7 @@
 import { Config } from "../../types/config";
 import { BackupStatusPanel } from "./BackupStatus";
 
-export const Status = ({
+export const BackupsList = ({
   config,
 }: {
   config: Config;
@@ -9,14 +9,23 @@ export const Status = ({
 }) => {
   return (
     <div class="card">
-      {config.backups.map((backup) => (
+      {config.backups.map((backup, i) => (
         <>
           <BackupStatusPanel
             key={backup.id}
             backup={backup}
             rootPath={config.rootPath}
           />
-          <hr />
+          {i + 1 < config.backups.length && (
+            <hr
+              style={{
+                marginTop: "1em",
+                marginBottom: "1em",
+                borderColor: "grey",
+                borderStyle: "solid",
+              }}
+            />
+          )}
         </>
       ))}
     </div>

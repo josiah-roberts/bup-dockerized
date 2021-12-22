@@ -1,9 +1,9 @@
 import { render } from "preact";
 import "./index.css";
-import { Application } from "./Application";
+import { WrappedApplication } from "./Application";
 
 render(
-  <Application />,
+  <WrappedApplication />,
   document.body,
   document.getElementById("app-root") ?? undefined
 );

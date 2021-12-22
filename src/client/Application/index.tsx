@@ -1,8 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 import { Channel, ChannelContext, makeChannel } from "../Channel";
-import { Form } from "./Form";
+import { Application } from "./Application";
 
-export const Application = () => {
+export const WrappedApplication = () => {
   const [channel, setChannel] = useState<Channel>();
 
   useEffect(() => {
@@ -15,7 +15,7 @@ export const Application = () => {
     <div class="application" id="application">
       <h1 class="card">Bup Console</h1>
       <ChannelContext.Provider value={channel}>
-        <Form />
+        <Application />
       </ChannelContext.Provider>
     </div>
   );
