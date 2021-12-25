@@ -119,7 +119,7 @@ export const BackupStatusPanel = ({
       <ul class="sources-list">
         {backup.sources.map((source) => (
           <li key={source}>
-            {source}{" "}
+            <span class="grey">{source} </span>
             <span
               class="small underline pointer"
               onClick={() =>
