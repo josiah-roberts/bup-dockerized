@@ -66,7 +66,10 @@ export function initializeRepository(r: string) {
 
 export function index(b: Backup, source: string) {
   return new Promise<void>((res, rej) => {
-    const index = bup(["index", "-v", "-v", source], getBackupDir(b), {
+    const args = b.exclude
+      ? ["index", "-v", "-v", "--exclude-rx", b.exclude, source]
+      : ["index", "-v", "-v", source];
+    const index = bup(args, getBackupDir(b), {
       env: { BUP_SOURCE: source },
     });
     readProcess(index, (stdout, stderr, code) => {

@@ -3,6 +3,7 @@ export type Backup = {
   cronLine: string;
   sources: string[];
   id: string;
+  exclude?: string;
 };
 
 export type Config = {

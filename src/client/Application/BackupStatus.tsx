@@ -27,6 +27,7 @@ export const BackupStatusPanel = ({
 
   const [editName, setEditName] = useState(backup.name);
   const [addPath, setAddPath] = useState("add source");
+  const [editExclude, setEditExclude] = useState(backup.exclude);
 
   const [editCronline, setEditCronline] = useState(backup.cronLine);
   const [status, setStatus] = useState<BackupStatus>();
@@ -148,6 +149,35 @@ export const BackupStatusPanel = ({
             }}
             onReset={() => setAddPath("add source")}
           />
+        </li>
+        <li style={{ marginTop: "0.5em" }}>
+          {backup.exclude && (
+            <>
+              <span class="grey hint" title="RegEx matched against entire path">
+                excluding
+              </span>
+              <span class="grey">: /</span>
+            </>
+          )}
+          <EditableSpan
+            class={!backup.exclude ? "small underline pointer" : ""}
+            value={editExclude ?? "add exclusion regex"}
+            onInput={(value) => setEditExclude(value)}
+            onSubmit={(value) => {
+              try {
+                new RegExp(value);
+                editBackup({
+                  backup: { ...backup, exclude: value || undefined },
+                });
+                setEditExclude(value || undefined);
+              } catch {
+                alert("Invalid regular expression!");
+                setEditExclude(backup.exclude);
+              }
+            }}
+            onReset={() => setEditExclude(backup.exclude)}
+          />
+          {backup.exclude && <span class="grey">/</span>}
         </li>
       </ul>
       <div>
