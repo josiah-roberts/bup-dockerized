@@ -20,6 +20,5 @@ export type BackupStatus = {
   runnability: Runnability;
   lastRun: Date | undefined;
   branchSize: number | undefined;
-  revisions: Date[] | undefined;
   status: StatusSummary;
 };

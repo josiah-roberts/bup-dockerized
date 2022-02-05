@@ -1,15 +1,9 @@
-import { readFile, writeFile } from "fs/promises";
 import { Backup } from "../../types/config";
 import { lstat } from "fs";
-import {
-  checkBranchCommited,
-  checkBranchBytes,
-  getBranchRevisions,
-} from "./bup-actions";
+import { checkBranchCommited, checkBranchBytes } from "./bup-actions";
 import { BackupStatus, Runnability, RunningStatus } from "../../types/status";
 import { emit } from "./events";
-import { once } from "ramda";
-import { getBackupDir, getConfigDir } from "./config-repository";
+import { getBackupDir } from "./config-repository";
 
 const statusMap: { [id: string]: BackupStatus } = {};
 
@@ -49,10 +43,8 @@ function isAccessableDir(path: string) {
   });
 }
 
-function getInitialStatusSummary(revisions: Date[] | undefined) {
-  return revisions?.length ?? 0 > 0
-    ? ("idle" as const)
-    : ("never-run" as const);
+function getInitialStatusSummary(lastRun: Date | undefined) {
+  return lastRun !== undefined ? ("idle" as const) : ("never-run" as const);
 }
 
 async function rebuildStatus(backup: Backup): Promise<BackupStatus> {
@@ -64,7 +56,6 @@ async function rebuildStatus(backup: Backup): Promise<BackupStatus> {
     }))
   );
   const lastRun = await checkBranchCommited(backup);
-  const revisions = await getBranchRevisions(backup);
   const branchSize = await checkBranchBytes(backup);
 
   const status = {
@@ -74,8 +65,7 @@ async function rebuildStatus(backup: Backup): Promise<BackupStatus> {
     runnability: getRunnability(repoAccessable, sourceStatus),
     lastRun,
     branchSize,
-    revisions,
-    status: statusMap[backup.id]?.status ?? getInitialStatusSummary(revisions),
+    status: statusMap[backup.id]?.status ?? getInitialStatusSummary(lastRun),
   };
 
   emit("backup-status", status);
@@ -101,7 +91,7 @@ export async function clearRunningStatus(backup: Backup) {
   const currentStatus = await recomputeStatus(backup);
   statusMap[backup.id] = {
     ...currentStatus,
-    status: getInitialStatusSummary(currentStatus.revisions),
+    status: getInitialStatusSummary(currentStatus.lastRun),
   };
   emit("backup-status", statusMap[backup.id]);
 }

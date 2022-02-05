@@ -121,7 +121,7 @@ export const BackupStatusPanel = ({
           <li key={source}>
             <span class="grey">{source} </span>
             <span
-              class="small underline pointer"
+              class="small pointer"
               onClick={() =>
                 editBackup({
                   backup: {
@@ -138,7 +138,7 @@ export const BackupStatusPanel = ({
         {backup.sources.length === 0 && <li class="grey italic">no sources</li>}
         <li>
           <EditableSpan
-            class="small underline pointer"
+            class="small pointer"
             value={addPath}
             onInput={(value) => setAddPath(value)}
             onSubmit={(value) => {
@@ -160,7 +160,7 @@ export const BackupStatusPanel = ({
             </>
           )}
           <EditableSpan
-            class={!backup.exclude ? "small underline pointer" : ""}
+            class={!backup.exclude ? "small pointer" : ""}
             value={editExclude ?? "add exclusion regex"}
             onInput={(value) => setEditExclude(value)}
             onSubmit={(value) => {
