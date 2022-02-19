@@ -59,7 +59,8 @@ export function initializeRepository(r: string) {
     const init = bup(["init"], r);
     readProcess(init, (stdout, stderr, code) => {
       if (code === 0) res();
-      else rej(code);
+      else
+        rej(new Error(`Failed initialize, code ${code}\n${stderr.join("\n")}`));
     });
   });
 }
@@ -74,7 +75,8 @@ export function index(b: Backup, source: string) {
     });
     readProcess(index, (stdout, stderr, code) => {
       if (code === 0) res();
-      else rej(code);
+      else
+        rej(new Error(`Failed to index, code ${code}\n${stderr.join("\n")}`));
     });
   });
 }
@@ -89,7 +91,7 @@ export function save(b: Backup) {
     );
     readProcess(save, (stdout, stderr, code) => {
       if (code === 0) res();
-      else rej(code);
+      else rej(new Error(`Failed to save, code ${code}\n${stderr.join("\n")}`));
     });
   });
 }
@@ -102,7 +104,7 @@ export function rename(b: Backup, newName: string) {
     const mv = git(["branch", "-m", b.name, newName], getBackupDir(b));
     readProcess(mv, (stdout, stderr, code) => {
       if (code === 0) res();
-      else rej(code);
+      else rej(new Error(`Failed rename, code ${code}\n${stderr.join("\n")}`));
     });
   }).then(() =>
     fsRename(getBackupDir(b), getBackupDir({ ...b, name: newName }))
