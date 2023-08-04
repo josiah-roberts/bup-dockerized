@@ -130,7 +130,7 @@ export function checkBranchCommited(b: Backup) {
 }
 
 export function getBranchRevisions(b: Backup) {
-  return new Promise<Date[] | undefined>((res, rej) => {
+  return new Promise<Date[]>((res, rej) => {
     const log = git(["log", "--pretty=%aI", b.name], getBackupDir(b))
     readProcess(log, (stdout, stderr, code) => {
       const error = stderr.join("\n").trim()
@@ -138,7 +138,7 @@ export function getBranchRevisions(b: Backup) {
       if (code === 0 && !error) {
         res(stdout.filter((x) => x.length > 0).map((x) => new Date(x.trim())))
       } else if (error.includes("unknown revision")) {
-        res(undefined)
+        res([])
       } else {
         rej(error ?? code)
       }
@@ -165,8 +165,8 @@ export function checkBranchBytes(b: Backup) {
   })
 }
 
-export function removeRevision(b: Backup, rev: Date) {
-  return new Promise<void>((res, rej) => {
+export async function removeRevision(b: Backup, rev: Date) {
+  await new Promise<void>((res, rej) => {
     const revisionName = `${rev.getUTCFullYear()}-${(rev.getUTCMonth() + 1)
       .toString()
       .padStart(2, "0")}-${rev.getUTCDate().toString().padStart(2, "0")}-${rev
@@ -190,6 +190,17 @@ export function removeRevision(b: Backup, rev: Date) {
         rej(error ?? code)
       }
     })
-    // run gc
+  })
+  await new Promise<void>((res, rej) => {
+    const rm = bup(["gc", "--unsafe", "-v"], getBackupDir(b))
+    readProcess(rm, (_, stderr, code) => {
+      const error = stderr.join("\n").trim()
+
+      if (code === 0) {
+        res()
+      } else {
+        rej(error ?? code)
+      }
+    })
   })
 }

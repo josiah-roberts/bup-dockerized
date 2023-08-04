@@ -205,6 +205,6 @@ export const messageHandlers: {
         revisions: dates.map((d) => d.toISOString()),
       })
     }
-    emit("backup-status", await getStatus(backup))
+    emit("backup-status", await recomputeStatus(backup))
   },
 }

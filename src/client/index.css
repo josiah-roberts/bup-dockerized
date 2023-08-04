@@ -28,6 +28,13 @@ body {
   margin-left: 10px;
 }
 
+.right-btn {
+  all: unset;
+  position: absolute;
+  cursor: pointer;
+  right: 0;
+}
+
 .application {
   max-width: 75em;
   margin-left: auto;

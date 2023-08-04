@@ -1,5 +1,6 @@
 import { parseExpression } from "cron-parser"
 import formatDistanceToNow from "date-fns/formatDistanceToNow"
+import formatRelative from "date-fns/formatRelative"
 import { useCallback, useEffect, useState } from "preact/hooks"
 import { JSX } from "preact/jsx-runtime"
 import { Backup } from "../../types/config"
@@ -16,26 +17,8 @@ const Bar = (props: JSX.IntrinsicElements["span"]) => (
   <span {...props} class="bar" />
 )
 
-const months = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-]
-
-const formatDate = (d: Date) => {
-  return `${months[d.getMonth()]} ${d.getDate()}${
-    d.getFullYear() !== new Date().getFullYear() ? `, ${d.getFullYear()}` : ""
-  }`
-}
+const title = (txt: string) =>
+  txt.length > 0 ? txt[0].toUpperCase() + txt.slice(1) : txt
 
 export const BackupStatusPanel = ({
   backup,
@@ -76,21 +59,6 @@ export const BackupStatusPanel = ({
     eb
   )
 
-  useSubscription(
-    "backup-status",
-    useCallback(
-      (m) => {
-        // We aren't limiting to correlation,
-        // so we need to filter out status changes for other
-        // backups
-        if (m.status.backupId === backup.id) {
-          setStatus(m.status)
-        }
-      },
-      [rn, gs, eb]
-    )
-  )
-
   const nextRun = useCallback(
     (cronLine: string) => parseExpression(cronLine).next().toDate(),
     [tick]
@@ -108,10 +76,27 @@ export const BackupStatusPanel = ({
     "backup-revisions",
     ({ revisions }) => {
       setRevisions(revisions)
-      setShowRevisions(true)
     },
     [st, r]
   )
+
+  useSubscription(
+    "backup-status",
+    useCallback(
+      (m) => {
+        // We aren't limiting to correlation,
+        // so we need to filter out status changes for other
+        // backups
+        if (m.status.backupId === backup.id) {
+          setStatus(m.status)
+          if (m.status.status === "idle") stat({ id: m.status.backupId })
+        }
+      },
+      [rn, gs, eb]
+    )
+  )
+
+  const isRunning = ["indexing", "saving"].includes(status?.status ?? "")
 
   return (
     <>
@@ -119,17 +104,14 @@ export const BackupStatusPanel = ({
         style={{
           position: "relative",
           width: showRevisions ? undefined : "100%",
+          flex: "1 1 auto",
         }}
         class={"column"}
       >
         <button
-          class="unset"
+          class="right-btn"
           style={{
-            position: "absolute",
             top: "-0.25em",
-            cursor: "pointer",
-            fontSize: "2em",
-            right: 0,
           }}
           onClick={() => {
             const confirmation = confirm(
@@ -139,24 +121,24 @@ export const BackupStatusPanel = ({
               removeBackup({ id: backup.id })
             }
           }}
+          title="Remove"
         >
-          ×
+          ❌
         </button>
         <button
-          class="unset"
+          class="right-btn"
           style={{
-            position: "absolute",
             top: "1.3em",
-            cursor: "pointer",
-            fontSize: "1.5em",
-            right: "0.1em",
           }}
           onClick={() => {
-            if (!showRevisions) stat({ id: backup.id })
-            else setShowRevisions(false)
+            if (!showRevisions) {
+              setShowRevisions(true)
+              stat({ id: backup.id })
+            } else setShowRevisions(false)
           }}
+          title="Revisions"
         >
-          ?
+          📜
         </button>
         <h3 style={{ marginBottom: 0, marginTop: "0.25em" }}>
           <span class="grey">{rootPath}/</span>
@@ -311,19 +293,39 @@ export const BackupStatusPanel = ({
         </div>
       </div>
       {showRevisions && (
-        <div class="column" style={{ maxWidth: "12em" }}>
+        <div
+          class={`column grey`}
+          style={{
+            borderLeft: "solid 1px #777",
+            paddingLeft: "0.75em",
+            flex: "0 1 auto",
+            fontSize: "0.9em",
+          }}
+        >
           {revisions.map((r) => (
             <div
               key={r}
-              onClick={() => {
-                console.info(r)
-                rm({ id: backup.id, revision: r })
-              }}
               title={new Date(r).toLocaleString()}
+              style={{ position: "relative" }}
             >
-              {formatDate(new Date(r))}
+              <span style={{ marginRight: "2em" }}>
+                {title(formatRelative(new Date(r), new Date()))}
+              </span>
+              {!isRunning && (
+                <span
+                  onClick={() => {
+                    rm({ id: backup.id, revision: r })
+                  }}
+                  class="right-btn"
+                  title="Delete revision"
+                >
+                  🗑️
+                </span>
+              )}
             </div>
           ))}
+
+          {revisions.length === 0 && "No revisions"}
         </div>
       )}
     </>
