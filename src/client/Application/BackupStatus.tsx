@@ -40,6 +40,7 @@ export const BackupStatusPanel = ({
   const [editBackup, eb] = useCommand("edit-backup")
   const [getStatus, gs] = useCommand("get-backup-status")
   const [removeBackup, rb] = useCommand("remove-backup")
+  const [garbageCollect, gc] = useCommand("gc")
 
   useEffect(() => {
     getStatus({ id: backup.id })
@@ -74,10 +75,13 @@ export const BackupStatusPanel = ({
   const [rm, r] = useCommand("remove-revision")
   useSubscription(
     "backup-revisions",
-    ({ revisions }) => {
-      setRevisions(revisions)
-    },
-    [st, r]
+    useCallback(
+      ({ revisions }) => {
+        setRevisions(revisions)
+      },
+      [setRevisions]
+    ),
+    [st, r, rn]
   )
 
   useSubscription(
@@ -89,7 +93,6 @@ export const BackupStatusPanel = ({
         // backups
         if (m.status.backupId === backup.id) {
           setStatus(m.status)
-          if (m.status.status === "idle") stat({ id: m.status.backupId })
         }
       },
       [rn, gs, eb]
@@ -123,7 +126,7 @@ export const BackupStatusPanel = ({
           }}
           title="Remove"
         >
-          ❌
+          ❌ <span class="hover-parent-absent">remove</span>
         </button>
         <button
           class="right-btn"
@@ -138,8 +141,9 @@ export const BackupStatusPanel = ({
           }}
           title="Revisions"
         >
-          📜
+          📜 <span class="hover-parent-absent">revisions</span>
         </button>
+
         <h3 style={{ marginBottom: 0, marginTop: "0.25em" }}>
           <span class="grey">{rootPath}/</span>
           <EditableSpan
@@ -291,41 +295,54 @@ export const BackupStatusPanel = ({
             </span>
           )}
         </div>
+        {showRevisions && (
+          <div
+            style={{
+              position: "absolute",
+              right: 0,
+              bottom: 0,
+            }}
+          >
+            <span
+              class="pointer"
+              onClick={() => garbageCollect({ id: backup.id })}
+            >
+              ♻️ <span class="hover-parent-absent">cleanup</span>
+            </span>
+          </div>
+        )}
       </div>
+      {/* disabled/loading until the delete finishes */}
       {showRevisions && (
         <div
-          class={`column grey`}
+          class="column"
           style={{
             borderLeft: "solid 1px #777",
             paddingLeft: "0.75em",
             flex: "0 1 auto",
-            fontSize: "0.9em",
           }}
         >
-          {revisions.map((r) => (
-            <div
-              key={r}
-              title={new Date(r).toLocaleString()}
-              style={{ position: "relative" }}
-            >
-              <span style={{ marginRight: "2em" }}>
-                {title(formatRelative(new Date(r), new Date()))}
-              </span>
-              {!isRunning && (
-                <span
-                  onClick={() => {
-                    rm({ id: backup.id, revision: r })
-                  }}
-                  class="right-btn"
-                  title="Delete revision"
-                >
-                  🗑️
+          <div class="grey" style={{ position: "relative", fontSize: "0.9em" }}>
+            {revisions.map((r) => (
+              <div key={r} title={new Date(r).toLocaleString()}>
+                <span class="hint" style={{ marginRight: "1.5em" }}>
+                  {title(formatRelative(new Date(r), new Date()))}
                 </span>
-              )}
-            </div>
-          ))}
-
-          {revisions.length === 0 && "No revisions"}
+                {!isRunning && (
+                  <span
+                    onClick={() => {
+                      rm({ id: backup.id, revision: r })
+                    }}
+                    class="right-btn hover-parent-hidden"
+                    title="Delete revision"
+                  >
+                    🗑️
+                  </span>
+                )}
+              </div>
+            ))}
+            {revisions.length === 0 && "No revisions"}
+          </div>
         </div>
       )}
     </>

@@ -18,6 +18,7 @@ export type ClientCommandType = (
   | { type: "run-now"; id: string }
   | { type: "get-revisions"; id: string }
   | { type: "remove-revision"; id: string; revision: string }
+  | { type: "gc"; id: string }
 ) & { correlation: string }
 export type ClientCommand<TKey extends ClientCommandType["type"]> = Exclude<
   ClientCommandType,

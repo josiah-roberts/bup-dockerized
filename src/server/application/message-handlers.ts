@@ -12,6 +12,7 @@ import { DistributiveOmit } from "../../types/util"
 import { isEmpty } from "ramda"
 import { time } from "cron"
 import {
+  gc,
   getBranchRevisions,
   initializeRepository,
   removeRevision,
@@ -180,6 +181,12 @@ export const messageHandlers: {
     if (!backup) return
 
     await run(backup)
+    const dates = await getBranchRevisions(backup)
+    if (dates) {
+      send(ws, "backup-revisions", {
+        revisions: dates.map((d) => d.toISOString()),
+      })
+    }
   },
   "get-revisions": async ({ message }, ws) => {
     const config = await getConfig()
@@ -205,6 +212,14 @@ export const messageHandlers: {
         revisions: dates.map((d) => d.toISOString()),
       })
     }
-    emit("backup-status", await recomputeStatus(backup))
+    await recomputeStatus(backup)
+  },
+  gc: async ({ message }, ws) => {
+    const config = await getConfig()
+    const backup = config.backups.find((x) => x.id === message.id)
+    if (!backup) return
+
+    await gc(backup)
+    await recomputeStatus(backup)
   },
 }

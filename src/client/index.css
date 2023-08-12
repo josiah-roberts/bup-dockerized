@@ -87,3 +87,23 @@ ul.sources-list {
 .unset {
   all: unset;
 }
+
+.hover-parent-hidden {
+  opacity: 0;
+  pointer-events: none;
+  cursor: unset;
+}
+
+*:hover > .hover-parent-hidden {
+  opacity: 1;
+  pointer-events: unset;
+  cursor: pointer;
+}
+
+.hover-parent-absent {
+  display: none;
+}
+
+*:hover > .hover-parent-absent {
+  display: unset;
+}

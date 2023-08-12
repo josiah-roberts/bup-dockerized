@@ -191,6 +191,9 @@ export async function removeRevision(b: Backup, rev: Date) {
       }
     })
   })
+}
+
+export async function gc(b: Backup) {
   await new Promise<void>((res, rej) => {
     const rm = bup(["gc", "--unsafe", "-v"], getBackupDir(b))
     readProcess(rm, (_, stderr, code) => {
