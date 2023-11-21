@@ -348,6 +348,8 @@ export const BackupStatusPanel = ({
             borderLeft: "solid 1px #777",
             paddingLeft: "0.75em",
             flex: "0 1 auto",
+            maxHeight: "30em",
+            overflow: "auto",
           }}
         >
           <div class="grey" style={{ position: "relative", fontSize: "0.9em" }}>
