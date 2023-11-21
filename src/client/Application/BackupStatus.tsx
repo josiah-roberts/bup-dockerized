@@ -41,6 +41,7 @@ export const BackupStatusPanel = ({
   const [getStatus, gs] = useCommand("get-backup-status")
   const [removeBackup, rb] = useCommand("remove-backup")
   const [garbageCollect, gc] = useCommand("gc")
+  const [prune, p] = useCommand("prune")
 
   useEffect(() => {
     getStatus({ id: backup.id })
@@ -277,6 +278,7 @@ export const BackupStatusPanel = ({
               </span>
             </>
           )}
+          {status?.status === "working" && <span>🚧 working...</span>}
           {status?.runnability.runnable === false && (
             <span
               class="hint"
@@ -289,27 +291,53 @@ export const BackupStatusPanel = ({
               {status.runnability.reason.replace("-", " ")}
             </span>
           )}
-          {!canRunNow() && status?.runnability.runnable && (
-            <span>
-              {status.status === "indexing" ? "🔦" : "💾"} {status.status}
-            </span>
-          )}
+          {!canRunNow() &&
+            status?.runnability.runnable &&
+            status.status !== "working" && (
+              <span>
+                {status.status === "indexing" ? "🔦" : "💾"} {status.status}
+              </span>
+            )}
         </div>
         {showRevisions && (
-          <div
-            style={{
-              position: "absolute",
-              right: 0,
-              bottom: 0,
-            }}
-          >
-            <span
-              class="pointer"
-              onClick={() => garbageCollect({ id: backup.id })}
+          <>
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                bottom: 0,
+              }}
             >
-              ♻️ <span class="hover-parent-absent">cleanup</span>
-            </span>
-          </div>
+              <span
+                class="pointer"
+                onClick={() => garbageCollect({ id: backup.id })}
+              >
+                ♻️ <span class="hover-parent-absent">cleanup</span>
+              </span>
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                bottom: "1.5em",
+              }}
+            >
+              <span
+                class="pointer"
+                onClick={() => {
+                  if (
+                    confirm(
+                      "This operation will prune older backups\n- Today, keep all\n- Last week, keep daily\n- Last year, keep monthly- Keep yearly forever\n\nDo you want to proceed?"
+                    )
+                  )
+                    prune({ id: backup.id })
+                }}
+              >
+                {"\u2702\uFE0F"}{" "}
+                <span class="hover-parent-absent">prune older</span>
+              </span>
+            </div>
+          </>
         )}
       </div>
       {/* disabled/loading until the delete finishes */}

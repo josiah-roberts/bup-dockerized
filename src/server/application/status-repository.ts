@@ -72,6 +72,11 @@ async function rebuildStatus(backup: Backup): Promise<BackupStatus> {
   return status
 }
 
+export function setStatus(backup: Backup, status: Partial<BackupStatus>) {
+  const newStatus = { ...statusMap[backup.id], ...status }
+  statusMap[backup.id] = newStatus
+  emit("backup-status", newStatus)
+}
 export async function recomputeStatus(backup: Backup) {
   return (statusMap[backup.id] = await rebuildStatus(backup))
 }

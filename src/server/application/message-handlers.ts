@@ -15,11 +15,12 @@ import {
   gc,
   getBranchRevisions,
   initializeRepository,
+  prune,
   removeRevision,
   rename,
 } from "./bup-actions"
 import { emit } from "./events"
-import { getStatus, recomputeStatus } from "./status-repository"
+import { getStatus, recomputeStatus, setStatus } from "./status-repository"
 import { run } from "./run"
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
@@ -205,6 +206,7 @@ export const messageHandlers: {
     const backup = config.backups.find((x) => x.id === message.id)
     if (!backup) return
 
+    setStatus(backup, { status: "working" })
     await removeRevision(backup, new Date(message.revision))
     const dates = await getBranchRevisions(backup)
     if (dates) {
@@ -212,6 +214,8 @@ export const messageHandlers: {
         revisions: dates.map((d) => d.toISOString()),
       })
     }
+
+    setStatus(backup, { status: "idle" })
     await recomputeStatus(backup)
   },
   gc: async ({ message }, ws) => {
@@ -219,7 +223,25 @@ export const messageHandlers: {
     const backup = config.backups.find((x) => x.id === message.id)
     if (!backup) return
 
+    setStatus(backup, { status: "working" })
     await gc(backup)
+    setStatus(backup, { status: "idle" })
+    await recomputeStatus(backup)
+  },
+  prune: async ({ message }, ws) => {
+    const config = await getConfig()
+    const backup = config.backups.find((x) => x.id === message.id)
+    if (!backup) return
+
+    setStatus(backup, { status: "working" })
+    await prune(backup)
+    const dates = await getBranchRevisions(backup)
+    if (dates) {
+      send(ws, "backup-revisions", {
+        revisions: dates.map((d) => d.toISOString()),
+      })
+    }
+    setStatus(backup, { status: "idle" })
     await recomputeStatus(backup)
   },
 }

@@ -1,8 +1,8 @@
 mkdir -p `pwd`/bup-dev-dir
 mkdir -p `pwd`/bup-dev-config
 
-docker build --tag bup-dev .
-docker run -it --rm \
+sudo docker build --tag bup-dev .
+sudo docker run -it --rm \
   -v `pwd`:/data:ro \
   -e BACKUPS_DIR=/backups \
   -v `pwd`/bup-dev-dir:/backups \

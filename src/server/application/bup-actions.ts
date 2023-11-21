@@ -125,7 +125,7 @@ export async function checkBranchCommited(b: Backup) {
   }
 }
 
-export async function getBranchRevisions(b: Backup): Promise<Date[]> {
+export async function getBranchRevisions(b: Backup) {
   const log = git(["log", "--pretty=%aI", b.name], getBackupDir(b))
   const { stdout, stderr, code, error } = await readProcess(log)
   if (code === 0 && !error) {
@@ -137,7 +137,7 @@ export async function getBranchRevisions(b: Backup): Promise<Date[]> {
   }
 }
 
-export async function checkBranchBytes(b: Backup): Promise<number | undefined> {
+export async function checkBranchBytes(b: Backup) {
   const revList = du(["-sb", getBackupDir(b)])
   const { stdout, stderr, code, error } = await readProcess(revList)
   if (code === 0 && !error) {
@@ -154,7 +154,7 @@ export async function checkBranchBytes(b: Backup): Promise<number | undefined> {
   }
 }
 
-export async function removeRevision(b: Backup, rev: Date): Promise<void> {
+export async function removeRevision(b: Backup, rev: Date) {
   const revisionName = formatDateToRevisionName(rev)
   const rm = bup(
     ["rm", `/${b.name}/${revisionName}`, "--unsafe", "-v"],
@@ -168,9 +168,31 @@ export async function removeRevision(b: Backup, rev: Date): Promise<void> {
   }
 }
 
-export async function gc(b: Backup): Promise<void> {
+export async function gc(b: Backup) {
   const gcProcess = bup(["gc", "--unsafe", "-v"], getBackupDir(b))
   const { stderr, code } = await readProcess(gcProcess)
+  if (code !== 0) {
+    throw new Error(`Failed to gc, code ${code}\n${stderr.join("\n")}`)
+  }
+}
+
+export async function prune(b: Backup) {
+  const pruneProcess = bup(
+    [
+      "prune-older",
+      "--keep-all-for",
+      "1d",
+      "--keep-dailies-for",
+      "1w",
+      "--keep-monthlies-for",
+      "1y",
+      "--keep-yearlies-for",
+      "forever",
+      "--unsafe",
+    ],
+    getBackupDir(b)
+  )
+  const { stderr, code } = await readProcess(pruneProcess)
   if (code !== 0) {
     throw new Error(`Failed to gc, code ${code}\n${stderr.join("\n")}`)
   }
