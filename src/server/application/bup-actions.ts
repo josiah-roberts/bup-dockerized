@@ -6,6 +6,7 @@ import {
 } from "child_process"
 import { getBackupDir } from "./config-repository"
 import { rename as fsRename } from "fs/promises"
+import { formatDateToRevisionName } from "../utils/format"
 
 function bup(args: string[], repo: string, options?: SpawnOptionsWithoutStdio) {
   const spawned = spawn("bup", args, {
@@ -33,10 +34,7 @@ function du(args: string[], options?: SpawnOptionsWithoutStdio) {
   return spawned
 }
 
-function readProcess(
-  operation: ChildProcessWithoutNullStreams,
-  exitHandler: (stdout: string[], stderr: string[], code: number | null) => void
-) {
+function readProcess(operation: ChildProcessWithoutNullStreams) {
   const stdout: string[] = []
   const stderr: string[] = []
 
@@ -49,161 +47,131 @@ function readProcess(
   operation.stdout.on("data", streamHandler(stdout))
   operation.stderr.on("data", streamHandler(stderr))
 
-  operation.on("exit", (code) => {
-    exitHandler(stdout, stderr, code)
-  })
-}
-
-export function initializeRepository(r: string) {
-  return new Promise<void>((res, rej) => {
-    const init = bup(["init"], r)
-    readProcess(init, (stdout, stderr, code) => {
-      if (code === 0) res()
-      else
-        rej(new Error(`Failed initialize, code ${code}\n${stderr.join("\n")}`))
+  return new Promise<{
+    stdout: string[]
+    stderr: string[]
+    code: number | null
+    error?: string
+  }>((res) => {
+    operation.on("exit", (code) => {
+      res({
+        stdout,
+        stderr,
+        code,
+        error: stderr.map((x) => x.trim()).join("") || undefined,
+      })
     })
   })
 }
 
-export function index(b: Backup, source: string) {
-  return new Promise<void>((res, rej) => {
-    const args = b.exclude
-      ? ["index", "-v", "-v", "--exclude-rx", b.exclude, source]
-      : ["index", "-v", "-v", source]
-    const index = bup(args, getBackupDir(b), {
-      env: { BUP_SOURCE: source },
-    })
-    readProcess(index, (stdout, stderr, code) => {
-      if (code === 0) res()
-      else rej(new Error(`Failed to index, code ${code}\n${stderr.join("\n")}`))
-    })
-  })
+export async function initializeRepository(r: string) {
+  const init = bup(["init"], r)
+  const { stderr, code } = await readProcess(init)
+  if (code !== 0) {
+    throw new Error(`Failed to initialize, code ${code}\n${stderr.join("\n")}`)
+  }
 }
 
-export function save(b: Backup) {
-  return new Promise<void>((res, rej) => {
-    const pathPairs = b.sources.map((p, i) => [`BUP_PATH_${i}`, p])
-
-    const save = bup(
-      ["save", "-v", "-v", `--name=${b.name}`, ...pathPairs.map(([, p]) => p)],
-      getBackupDir(b)
-    )
-    readProcess(save, (stdout, stderr, code) => {
-      if (code === 0) res()
-      else rej(new Error(`Failed to save, code ${code}\n${stderr.join("\n")}`))
-    })
+export async function index(b: Backup, source: string) {
+  const args = b.exclude
+    ? ["index", "-v", "-v", "--exclude-rx", b.exclude, source]
+    : ["index", "-v", "-v", source]
+  const index = bup(args, getBackupDir(b), {
+    env: { BUP_SOURCE: source },
   })
+  const { stderr, code } = await readProcess(index)
+  if (code !== 0) {
+    throw new Error(`Failed to index, code ${code}\n${stderr.join("\n")}`)
+  }
+}
+
+export async function save(b: Backup) {
+  const pathPairs = b.sources.map((p, i) => [`BUP_PATH_${i}`, p])
+  const save = bup(
+    ["save", "-v", "-v", `--name=${b.name}`, ...pathPairs.map(([, p]) => p)],
+    getBackupDir(b)
+  )
+  const { stderr, code } = await readProcess(save)
+  if (code !== 0) {
+    throw new Error(`Failed to save, code ${code}\n${stderr.join("\n")}`)
+  }
 }
 
 /**
  * Renames the backup's branch name, and moves the backup to a new location
  */
-export function rename(b: Backup, newName: string) {
-  return new Promise<void>((res, rej) => {
-    const mv = git(["branch", "-m", b.name, newName], getBackupDir(b))
-    readProcess(mv, (stdout, stderr, code) => {
-      if (code === 0) res()
-      else rej(new Error(`Failed rename, code ${code}\n${stderr.join("\n")}`))
-    })
-  }).then(() =>
-    fsRename(getBackupDir(b), getBackupDir({ ...b, name: newName }))
-  )
+export async function rename(b: Backup, newName: string) {
+  const mv = git(["branch", "-m", b.name, newName], getBackupDir(b))
+  const { stderr, code } = await readProcess(mv)
+  if (code === 0) {
+    await fsRename(getBackupDir(b), getBackupDir({ ...b, name: newName }))
+  } else {
+    throw new Error(`Failed to rename, code ${code}\n${stderr.join("\n")}`)
+  }
 }
 
-export function checkBranchCommited(b: Backup) {
-  return new Promise<Date | undefined>((res, rej) => {
-    const branch = git(["log", "-1", "--format=%ct", b.name], getBackupDir(b))
+export async function checkBranchCommited(b: Backup) {
+  const branch = git(["log", "-1", "--format=%ct", b.name], getBackupDir(b))
+  const { stdout, code, error } = await readProcess(branch)
 
-    readProcess(branch, (stdout, stderr, code) => {
-      const error = stderr.join("\n").trim()
-      const output = stdout.join("\n").trim()
+  const output = stdout.join("\n").trim()
 
-      if (code === 0 && !error) {
-        res(new Date(Number(output) * 1_000))
-      } else if (error.includes("unknown revision")) {
-        res(undefined)
-      } else {
-        rej(error ?? code)
-      }
-    })
-  })
+  if (code === 0 && !error) {
+    return new Date(Number(output) * 1_000)
+  } else if (error?.includes("unknown revision")) {
+    return undefined
+  } else {
+    throw new Error(`${error}: ${code}`)
+  }
 }
 
-export function getBranchRevisions(b: Backup) {
-  return new Promise<Date[]>((res, rej) => {
-    const log = git(["log", "--pretty=%aI", b.name], getBackupDir(b))
-    readProcess(log, (stdout, stderr, code) => {
-      const error = stderr.join("\n").trim()
-
-      if (code === 0 && !error) {
-        res(stdout.filter((x) => x.length > 0).map((x) => new Date(x.trim())))
-      } else if (error.includes("unknown revision")) {
-        res([])
-      } else {
-        rej(error ?? code)
-      }
-    })
-  })
+export async function getBranchRevisions(b: Backup): Promise<Date[]> {
+  const log = git(["log", "--pretty=%aI", b.name], getBackupDir(b))
+  const { stdout, stderr, code, error } = await readProcess(log)
+  if (code === 0 && !error) {
+    return stdout.filter((x) => x.length > 0).map((x) => new Date(x.trim()))
+  } else if (error?.includes("unknown revision")) {
+    return []
+  } else {
+    throw new Error(stderr.join("\n").trim() ?? `code ${code}`)
+  }
 }
 
-export function checkBranchBytes(b: Backup) {
-  return new Promise<number | undefined>((res, rej) => {
-    const revList = du(["-sb", getBackupDir(b)])
-
-    readProcess(revList, (stdout, stderr, code) => {
-      const error = stderr.join("\n").trim()
-      const output = stdout.join("\n").trim()
-
-      if (code === 0 && !error) {
-        res(Number(output.match(/[0-9]+/)?.[0]))
-      } else if (error.includes("unknown revision")) {
-        res(undefined)
-      } else {
-        rej(error ?? code)
-      }
-    })
-  })
-}
-
-export async function removeRevision(b: Backup, rev: Date) {
-  await new Promise<void>((res, rej) => {
-    const revisionName = `${rev.getUTCFullYear()}-${(rev.getUTCMonth() + 1)
-      .toString()
-      .padStart(2, "0")}-${rev.getUTCDate().toString().padStart(2, "0")}-${rev
-      .getUTCHours()
-      .toString()
-      .padStart(2, "0")}${rev.getUTCMinutes().toString().padStart(2, "0")}${rev
-      .getUTCSeconds()
-      .toString()
-      .padStart(2, "0")}`
-    const rm = bup(
-      ["rm", `/${b.name}/${revisionName}`, "--unsafe", "-v"],
-      getBackupDir(b)
+export async function checkBranchBytes(b: Backup): Promise<number | undefined> {
+  const revList = du(["-sb", getBackupDir(b)])
+  const { stdout, stderr, code, error } = await readProcess(revList)
+  if (code === 0 && !error) {
+    return Number(
+      stdout
+        .join("")
+        .trim()
+        .match(/[0-9]+/)?.[0]
     )
-    readProcess(rm, (stdout, stderr, code) => {
-      const error = stderr.join("\n").trim()
-      const output = stdout.join("\n").trim()
-
-      if (code === 0) {
-        res()
-      } else {
-        rej(error ?? code)
-      }
-    })
-  })
+  } else if (error?.includes("unknown revision")) {
+    return undefined
+  } else {
+    throw new Error(stderr.join("\n").trim() ?? `code ${code}`)
+  }
 }
 
-export async function gc(b: Backup) {
-  await new Promise<void>((res, rej) => {
-    const rm = bup(["gc", "--unsafe", "-v"], getBackupDir(b))
-    readProcess(rm, (_, stderr, code) => {
-      const error = stderr.join("\n").trim()
+export async function removeRevision(b: Backup, rev: Date): Promise<void> {
+  const revisionName = formatDateToRevisionName(rev)
+  const rm = bup(
+    ["rm", `/${b.name}/${revisionName}`, "--unsafe", "-v"],
+    getBackupDir(b)
+  )
+  const { stderr, code } = await readProcess(rm)
+  if (code !== 0) {
+    throw new Error(
+      `Failed to remove revision, code ${code}\n${stderr.join("\n")}`
+    )
+  }
+}
 
-      if (code === 0) {
-        res()
-      } else {
-        rej(error ?? code)
-      }
-    })
-  })
+export async function gc(b: Backup): Promise<void> {
+  const gcProcess = bup(["gc", "--unsafe", "-v"], getBackupDir(b))
+  const { stderr, code } = await readProcess(gcProcess)
+  if (code !== 0) {
+    throw new Error(`Failed to gc, code ${code}\n${stderr.join("\n")}`)
+  }
 }
