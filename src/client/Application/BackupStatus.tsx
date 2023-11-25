@@ -278,7 +278,9 @@ export const BackupStatusPanel = ({
               </span>
             </>
           )}
-          {status?.status === "working" && <span>🚧 working...</span>}
+          {status?.status === "working" && (
+            <span class="grey">🚧 working...</span>
+          )}
           {status?.runnability.runnable === false && (
             <span
               class="hint"
