@@ -4,7 +4,7 @@ import {
   SpawnOptionsWithoutStdio,
   ChildProcessWithoutNullStreams,
 } from "child_process"
-import { getBackupDir } from "./config-repository"
+import { getBackupDir, getRestoreDir } from "./config-repository"
 import { rename as fsRename } from "fs/promises"
 import { formatDateToRevisionName } from "../utils/format"
 
@@ -196,4 +196,20 @@ export async function prune(b: Backup) {
   if (code !== 0) {
     throw new Error(`Failed to gc, code ${code}\n${stderr.join("\n")}`)
   }
+}
+
+export async function restore(b: Backup, revision: Date, subpath: string) {
+  const restore = bup(
+    [
+      "restore",
+      `--outdir=${getRestoreDir(b)}`,
+      "-q",
+      `/${b.name}/${formatDateToRevisionName(revision)}${
+        subpath.startsWith("/") ? subpath : `/${subpath}`
+      }`,
+    ],
+    getBackupDir(b)
+  )
+  const { stderr, code } = await readProcess(restore)
+  return [stderr, code] as const
 }

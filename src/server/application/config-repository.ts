@@ -23,6 +23,8 @@ export const getBackupsDir = () => {
 }
 
 export const getBackupDir = (b: Backup) => `${getBackupsDir()}/${b.name}`
+export const getRestoreDir = (b: Backup) =>
+  `${getBackupsDir()}/bup_restore_${b.name}`
 
 let inMemoryConfig: Config | undefined
 const loadConfig = once(() =>

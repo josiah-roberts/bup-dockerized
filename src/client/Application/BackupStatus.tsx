@@ -74,6 +74,7 @@ export const BackupStatusPanel = ({
   const [showRevisions, setShowRevisions] = useState(false)
   const [stat, st] = useCommand("get-revisions")
   const [rm, r] = useCommand("remove-revision")
+  const [restore, restoreCorrelation] = useCommand("restore")
   useSubscription(
     "backup-revisions",
     useCallback(
@@ -83,6 +84,17 @@ export const BackupStatusPanel = ({
       [setRevisions]
     ),
     [st, r, rn]
+  )
+
+  useSubscription(
+    "client-error",
+    useCallback(
+      (m) => {
+        alert(m.error)
+      },
+      [restoreCorrelation]
+    ),
+    restoreCorrelation
   )
 
   useSubscription(
@@ -356,20 +368,48 @@ export const BackupStatusPanel = ({
         >
           <div class="grey" style={{ position: "relative", fontSize: "0.9em" }}>
             {revisions.map((r) => (
-              <div key={r} title={new Date(r).toLocaleString()}>
+              <div
+                key={r}
+                title={new Date(r).toLocaleString()}
+                style={{ paddingRight: "2em" }}
+              >
                 <span class="hint" style={{ marginRight: "1.5em" }}>
                   {title(formatRelative(new Date(r), new Date()))}
                 </span>
                 {!isRunning && (
-                  <span
-                    onClick={() => {
-                      rm({ id: backup.id, revision: r })
-                    }}
-                    class="right-btn hover-parent-hidden"
-                    title="Delete revision"
-                  >
-                    🗑️
-                  </span>
+                  <div class="right-btn hover-parent-hidden">
+                    <span
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `Are you sure you want to delete the revision from ${formatRelative(
+                              new Date(r),
+                              new Date()
+                            )} (${r})?`
+                          )
+                        ) {
+                          rm({ id: backup.id, revision: r })
+                        }
+                      }}
+                      title="Delete revision"
+                    >
+                      🗑️
+                    </span>
+                    <span
+                      onClick={() => {
+                        const path = prompt(
+                          "Please provide a sub-path that you want to restore, or leave blank to restore the entire backup.",
+                          ""
+                        )
+                        if (path !== null) {
+                          restore({ id: backup.id, revision: r, subpath: path })
+                        }
+                      }}
+                      title="Restore revision"
+                    >
+                      🌥️
+                    </span>
+                  </div>
                 )}
               </div>
             ))}

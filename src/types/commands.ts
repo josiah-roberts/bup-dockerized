@@ -20,6 +20,7 @@ export type ClientCommandType = (
   | { type: "remove-revision"; id: string; revision: string }
   | { type: "gc"; id: string }
   | { type: "prune"; id: string }
+  | { type: "restore"; id: string; revision: string; subpath?: string }
 ) & { correlation: string }
 export type ClientCommand<TKey extends ClientCommandType["type"]> = Exclude<
   ClientCommandType,

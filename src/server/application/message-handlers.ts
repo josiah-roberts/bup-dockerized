@@ -6,7 +6,12 @@ import {
   ServerMessageType,
 } from "../../types/commands"
 import { spawn, exec } from "child_process"
-import { getBackupDir, getConfig, setConfig } from "./config-repository"
+import {
+  getBackupDir,
+  getConfig,
+  getRestoreDir,
+  setConfig,
+} from "./config-repository"
 import { getAnyCorrelation } from "../utils/correlation"
 import { DistributiveOmit } from "../../types/util"
 import { isEmpty } from "ramda"
@@ -18,6 +23,7 @@ import {
   prune,
   removeRevision,
   rename,
+  restore,
 } from "./bup-actions"
 import { emit } from "./events"
 import { getStatus, recomputeStatus, setStatus } from "./status-repository"
@@ -243,5 +249,41 @@ export const messageHandlers: {
     }
     setStatus(backup, { status: "idle" })
     await recomputeStatus(backup)
+  },
+  restore: async ({ message }, ws) => {
+    const config = await getConfig()
+    const backup = config.backups.find((x) => x.id === message.id)
+    if (!backup) return
+
+    const restoreDate = new Date(message.revision)
+
+    const dates = await getBranchRevisions(backup)
+    if (!dates.find((d) => d.getTime() === restoreDate.getTime())) {
+      send(ws, "client-error", {
+        error: `Revision ${message.revision} does not exist`,
+      })
+      return
+    }
+
+    setStatus(backup, { status: "working" })
+    const [stderr, code] = await restore(
+      backup,
+      restoreDate,
+      message.subpath ?? ""
+    )
+    if (code !== 0 && stderr.join("").includes("not empty")) {
+      send(ws, "client-error", {
+        error: `Failed to restore:\nDirectory ${getRestoreDir(
+          backup
+        )} is not empty!`,
+      })
+      return
+    }
+    if (code !== 0) {
+      send(ws, "client-error", {
+        error: `Failed to restore:\n${stderr}`,
+      })
+    }
+    setStatus(backup, { status: "idle" })
   },
 }
