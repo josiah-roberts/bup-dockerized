@@ -1,66 +1,66 @@
-import { readFile, writeFile } from "fs/promises";
-import { once, sortBy } from "ramda";
-import assert from "assert";
-import { Backup, Config } from "../../types/config";
-import { addShutdownTask } from "../utils/shutdown";
-import { defaultBackupsPath, defaultConfigPath } from "../utils/check-env";
+import { readFile, writeFile } from "fs/promises"
+import { once, sortBy } from "ramda"
+import assert from "assert"
+import { Backup, Config } from "../../types/config"
+import { addShutdownTask } from "../utils/shutdown"
+import { defaultBackupsPath, defaultConfigPath } from "../utils/check-env"
 
 const defaultConfig = (): Config => ({
   backups: [],
   rootPath: getBackupsDir(),
-});
+})
 
 export const getConfigDir = () => {
-  const configDir = process.env["CONFIG_DIR"] ?? defaultConfigPath;
-  assert(configDir);
-  return configDir;
-};
+  const configDir = process.env["CONFIG_DIR"] ?? defaultConfigPath
+  assert(configDir)
+  return configDir
+}
 
 export const getBackupsDir = () => {
-  const backupsDir = process.env["BACKUPS_DIR"] ?? defaultBackupsPath;
-  assert(backupsDir);
-  return backupsDir;
-};
+  const backupsDir = process.env["BACKUPS_DIR"] ?? defaultBackupsPath
+  assert(backupsDir)
+  return backupsDir
+}
 
-export const getBackupDir = (b: Backup) => `${getBackupsDir()}/${b.name}`;
+export const getBackupDir = (b: Backup) => `${getBackupsDir()}/${b.name}`
 
-let inMemoryConfig: Config;
+let inMemoryConfig: Config | undefined
 const loadConfig = once(() =>
   readFile(`${getConfigDir()}/config.json`)
     .then((buffer) => buffer.toString())
     .then<Config>((json) => JSON.parse(json))
     .catch((e) => {
-      console.warn(e);
-      return defaultConfig();
+      console.warn(e)
+      return defaultConfig()
     })
     .then((config) => setConfig({ ...config, rootPath: getBackupsDir() }))
-);
+)
 
-let writing = false;
+let writing = false
 const writeConfig = async () => {
   if (!writing && inMemoryConfig) {
-    writing = true;
+    writing = true
     await writeFile(
       `${getConfigDir()}/config.json`,
       JSON.stringify(inMemoryConfig)
-    );
-    writing = false;
+    )
+    writing = false
   } else {
-    console.warn("Already writing config!");
+    console.warn("Already writing config!")
   }
-  return inMemoryConfig;
-};
+}
 
-export const getConfig = () => inMemoryConfig ?? loadConfig();
-export const setConfig = (newConfig: Config) => {
+export const getConfig = () => inMemoryConfig ?? loadConfig()
+export const setConfig = async (newConfig: Config) => {
   const configToWrite = {
     ...newConfig,
     backups: sortBy((b) => b.name, newConfig.backups),
-  };
-  inMemoryConfig = configToWrite;
-  return writeConfig();
-};
+  }
+  inMemoryConfig = configToWrite
+  await writeConfig()
+  return configToWrite
+}
 
 addShutdownTask("write config", async () => {
-  await writeConfig();
-});
+  await writeConfig()
+})
