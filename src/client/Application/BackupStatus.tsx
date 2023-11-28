@@ -119,8 +119,9 @@ export const BackupStatusPanel = ({
       <div
         style={{
           position: "relative",
-          width: showRevisions ? undefined : "100%",
           flex: "1 1 auto",
+          flexWrap: "wrap",
+          overflow: "hidden",
         }}
         class={"column"}
       >
@@ -157,96 +158,107 @@ export const BackupStatusPanel = ({
           📜 <span class="hover-parent-absent">revisions</span>
         </button>
 
-        <h3 style={{ marginBottom: 0, marginTop: "0.25em" }}>
-          <span class="grey">{rootPath}/</span>
-          <EditableSpan
-            onSubmit={(value) =>
-              editBackup({ backup: { ...backup, name: value } })
-            }
-            onInput={(value) => setEditName(value)}
-            onReset={() => setEditName(backup.name)}
-            value={editName}
-          />
-        </h3>
-        {status?.lastRun && !status?.branchSize && (
-          <span class="italic small bold grey">Computing size...</span>
-        )}
-        {status?.lastRun && status.branchSize && (
-          <>
-            <span class="italic small bold grey">
-              {filesize(status.branchSize, { round: 1 })}
-            </span>
-          </>
-        )}
-        <ul class="sources-list">
-          {backup.sources.map((source) => (
-            <li key={source}>
-              <span class="grey">{source} </span>
-              <span
-                class="small pointer"
-                onClick={() =>
-                  editBackup({
-                    backup: {
-                      ...backup,
-                      sources: backup.sources.filter((x) => x !== source),
-                    },
-                  })
-                }
-              >
-                remove
-              </span>
-            </li>
-          ))}
-          {backup.sources.length === 0 && (
-            <li class="grey italic">no sources</li>
+        <div style={{ flexGrow: 1, maxWidth: "100%" }}>
+          <h3 style={{ marginBottom: 0, marginTop: "0.25em" }}>
+            <span class="grey">{rootPath}/</span>
+            <EditableSpan
+              onSubmit={(value) =>
+                editBackup({ backup: { ...backup, name: value } })
+              }
+              onInput={(value) => setEditName(value)}
+              onReset={() => setEditName(backup.name)}
+              value={editName}
+            />
+          </h3>
+          {status?.lastRun && !status?.branchSize && (
+            <span class="italic small bold grey">Computing size...</span>
           )}
-          <li>
-            <EditableSpan
-              class="small pointer"
-              value={addPath}
-              onInput={(value) => setAddPath(value)}
-              onSubmit={(value) => {
-                editBackup({
-                  backup: { ...backup, sources: [...backup.sources, value] },
-                })
-                setAddPath("add source")
-              }}
-              onReset={() => setAddPath("add source")}
-            />
-          </li>
-          <li style={{ marginTop: "0.5em" }}>
-            {backup.exclude && (
-              <>
+          {status?.lastRun && status.branchSize && (
+            <>
+              <span class="italic small bold grey">
+                {filesize(status.branchSize, { round: 1 })}
+              </span>
+            </>
+          )}
+          <ul class="sources-list">
+            {backup.sources.map((source) => (
+              <li key={source}>
+                <span class="grey">{source} </span>
                 <span
-                  class="grey hint"
-                  title="RegEx matched against entire path"
+                  class="small pointer"
+                  onClick={() =>
+                    editBackup({
+                      backup: {
+                        ...backup,
+                        sources: backup.sources.filter((x) => x !== source),
+                      },
+                    })
+                  }
                 >
-                  excluding
+                  remove
                 </span>
-                <span class="grey">: /</span>
-              </>
+              </li>
+            ))}
+            {backup.sources.length === 0 && (
+              <li class="grey italic">no sources</li>
             )}
-            <EditableSpan
-              class={!backup.exclude ? "small pointer" : ""}
-              value={editExclude ?? "add exclusion regex"}
-              onInput={(value) => setEditExclude(value)}
-              onSubmit={(value) => {
-                try {
-                  new RegExp(value)
+            <li>
+              <EditableSpan
+                class="small pointer"
+                value={addPath}
+                onInput={(value) => setAddPath(value)}
+                onSubmit={(value) => {
                   editBackup({
-                    backup: { ...backup, exclude: value || undefined },
+                    backup: { ...backup, sources: [...backup.sources, value] },
                   })
-                  setEditExclude(value || undefined)
-                } catch {
-                  alert("Invalid regular expression!")
-                  setEditExclude(backup.exclude)
-                }
-              }}
-              onReset={() => setEditExclude(backup.exclude)}
-            />
-            {backup.exclude && <span class="grey">/</span>}
-          </li>
-        </ul>
+                  setAddPath("add source")
+                }}
+                onReset={() => setAddPath("add source")}
+              />
+            </li>
+            <li style={{ marginTop: "0.5em" }}>
+              {backup.exclude && (
+                <>
+                  <span
+                    class="grey hint"
+                    title="RegEx matched against entire path"
+                  >
+                    excluding
+                  </span>
+                  <span class="grey">: /</span>
+                </>
+              )}
+              <EditableSpan
+                style={{
+                  textOverflow: "ellipsis",
+                  whiteSpace: "wrap",
+                  maxWidth: "calc(100% - 10em)",
+                  display: "inline-block",
+                  overflow: "hidden",
+                  verticalAlign: "bottom",
+                }}
+                title={editExclude}
+                class={!backup.exclude ? "small pointer" : "pointer"}
+                value={editExclude ?? "add exclusion regex"}
+                onInput={(value) => setEditExclude(value)}
+                onSubmit={(value) => {
+                  try {
+                    new RegExp(value)
+                    editBackup({
+                      backup: { ...backup, exclude: value || undefined },
+                    })
+                    setEditExclude(value || undefined)
+                  } catch {
+                    alert("Invalid regular expression!")
+                    setEditExclude(backup.exclude)
+                  }
+                }}
+                onReset={() => setEditExclude(backup.exclude)}
+              />
+              {backup.exclude && <span class="grey">/</span>}
+            </li>
+          </ul>
+        </div>
         <div>
           <EditableSpan
             onSubmit={(value) =>
@@ -361,9 +373,10 @@ export const BackupStatusPanel = ({
           style={{
             borderLeft: "solid 1px #777",
             paddingLeft: "0.75em",
-            flex: "0 1 auto",
-            maxHeight: "30em",
+            flex: "0 0 auto",
+            maxHeight: "20em",
             overflow: "auto",
+            paddingBottom: "0.1em",
           }}
         >
           <div class="grey" style={{ position: "relative", fontSize: "0.9em" }}>

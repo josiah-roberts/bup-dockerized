@@ -14,14 +14,12 @@ body {
 .row {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .column {
   display: flex;
   flex-direction: column;
-  flex-basis: 100%;
-  flex: 1;
 }
 
 .column:nth-child(2) {
