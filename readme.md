@@ -12,4 +12,4 @@ docker run -it --rm \
 
 ## WebUI
 
-![image](https://github.com/josiah-roberts/bup-dockerized/assets/37082009/09f87e7a-2d6e-41b4-88f5-e66474b5442b)
+![image](https://github.com/josiah-roberts/bup-dockerized/assets/37082009/48daf7a4-ab55-4f1a-9a24-7ea3019be148)
