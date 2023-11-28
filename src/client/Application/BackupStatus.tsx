@@ -127,9 +127,6 @@ export const BackupStatusPanel = ({
       >
         <button
           class="right-btn"
-          style={{
-            top: "-0.25em",
-          }}
           onClick={() => {
             const confirmation = confirm(
               `Are you sure you want to remove "${backup.name}"?\n\nThis backup will be disabled, and any executing operations will run to completion.\n\nBackup output at ${rootPath}/${backup.name} will not be removed.`
@@ -145,7 +142,7 @@ export const BackupStatusPanel = ({
         <button
           class="right-btn"
           style={{
-            top: "1.3em",
+            top: "1.5em",
           }}
           onClick={() => {
             if (!showRevisions) {
@@ -218,20 +215,21 @@ export const BackupStatusPanel = ({
             </li>
             <li style={{ marginTop: "0.5em" }}>
               {backup.exclude && (
-                <>
-                  <span
-                    class="grey hint"
-                    title="RegEx matched against entire path"
-                  >
+                <div
+                  class="grey"
+                  style={{ display: "inline-block", verticalAlign: "top" }}
+                >
+                  <span class="hint" title="RegEx matched against entire path">
                     excluding
                   </span>
-                  <span class="grey">: /</span>
-                </>
+                  : /
+                </div>
               )}
               <EditableSpan
                 style={{
                   textOverflow: "ellipsis",
                   whiteSpace: "wrap",
+                  wordBreak: "anywhere",
                   maxWidth: "calc(100% - 10em)",
                   display: "inline-block",
                   overflow: "hidden",
