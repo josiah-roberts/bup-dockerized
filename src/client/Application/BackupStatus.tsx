@@ -137,12 +137,12 @@ export const BackupStatusPanel = ({
           }}
           title="Remove"
         >
-          ❌ <span class="hover-parent-absent">remove</span>
+          <span class="hover-parent-absent">remove</span> ❌
         </button>
         <button
           class="right-btn"
           style={{
-            top: "1.5em",
+            top: "1.6em",
           }}
           onClick={() => {
             if (!showRevisions) {
@@ -152,7 +152,7 @@ export const BackupStatusPanel = ({
           }}
           title="Revisions"
         >
-          📜 <span class="hover-parent-absent">revisions</span>
+          <span class="hover-parent-absent">revisions</span> 📜
         </button>
 
         <div style={{ flexGrow: 1, maxWidth: "100%" }}>
@@ -336,7 +336,7 @@ export const BackupStatusPanel = ({
                 class="pointer"
                 onClick={() => garbageCollect({ id: backup.id })}
               >
-                ♻️ <span class="hover-parent-absent">cleanup</span>
+                <span class="hover-parent-absent">cleanup</span> ♻️
               </span>
             </div>
             <div
@@ -357,8 +357,8 @@ export const BackupStatusPanel = ({
                     prune({ id: backup.id })
                 }}
               >
-                {"\u2702\uFE0F"}{" "}
-                <span class="hover-parent-absent">prune older</span>
+                <span class="hover-parent-absent">prune older</span>{" "}
+                {"\u2702\uFE0F"}
               </span>
             </div>
           </>
@@ -377,12 +377,12 @@ export const BackupStatusPanel = ({
             paddingBottom: "0.1em",
           }}
         >
-          <div class="grey" style={{ position: "relative", fontSize: "0.9em" }}>
+          <div class="grey" style={{ position: "relative" }}>
             {revisions.map((r) => (
               <div
                 key={r}
                 title={new Date(r).toLocaleString()}
-                style={{ paddingRight: "2em" }}
+                style={{ paddingRight: "2em", fontSize: "0.9em" }}
               >
                 <span class="hint" style={{ marginRight: "1.5em" }}>
                   {title(formatRelative(new Date(r), new Date()))}

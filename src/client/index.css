@@ -105,3 +105,16 @@ ul.sources-list {
 *:hover > .hover-parent-absent {
   display: unset;
 }
+
+*::-webkit-scrollbar {
+  width: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #292929;
+}
