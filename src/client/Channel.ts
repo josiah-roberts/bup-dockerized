@@ -18,9 +18,10 @@ export type Channel = {
 };
 
 const makeWebsocket = () => {
-  const socket = new WebSocket(`ws://${location.host}/ws`);
+  const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
+  const socket = new WebSocket(`${wsProtocol}//${location.host}/ws`);
   socket.addEventListener("message", (ev) => {
-    console.info("Recieved", ev.data);
+    console.info("Received", ev.data);
   });
   socket.addEventListener("open", () => {
     console.info("Opened socket");
