@@ -1,4 +1,4 @@
-FROM node:21-slim as git-builder
+FROM node:21-slim AS git-builder
 RUN apt-get update && apt-get install --no-install-recommends -y \
   gettext build-essential git autoconf libz-dev libssl-dev libcurl4-gnutls-dev libexpat1-dev \
   && rm -rf /var/lib/apt/lists/*
@@ -12,7 +12,7 @@ RUN git clone git://git.kernel.org/pub/scm/git/git.git . && \
   make install && \
   rm -rf /usr/git
 
-FROM node:alpine as install
+FROM node:alpine AS install
 
 WORKDIR /usr/app
 COPY ./package.json /usr/app/package.json

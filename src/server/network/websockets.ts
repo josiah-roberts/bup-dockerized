@@ -12,6 +12,7 @@ import {
 import { getConfig } from "../application/config-repository";
 import { addListener, removeListener } from "../application/events";
 import { BackupStatus } from "../../types/status";
+import { createServer } from "./websocket-server";
 
 export const patchSendWithLogging = (ws: WebSocket) => {
   const baseSend = ws.send.bind(ws);
