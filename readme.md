@@ -16,7 +16,7 @@ docker run -it --rm \
 - Cron-style schedules
 - Revision removal
 - Restore a revision
-- Exponential-backoff style pruning ([prune-older](https://bup.github.io/man/bup-prune-older.html))
+- Exponential-backoff style pruning ([prune-older](https://bup.github.io/man/bup-prune-older.1.html))
 - Various visibility tools
   - Space used
   - Last run
