@@ -43,7 +43,7 @@ export const createWsServer = () => {
         return;
       }
 
-      send(ws, "backup-status", { status });
+      send(ws, "backup-status", { status, id: backup.id });
     };
     const sendClientError = async (e: string) => {
       send(ws, "client-error", { error: e });
