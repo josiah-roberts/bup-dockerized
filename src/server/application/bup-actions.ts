@@ -189,6 +189,7 @@ export async function prune(b: Backup) {
       "--keep-yearlies-for",
       "forever",
       "--unsafe",
+      "--no-gc",
     ],
     getBackupDir(b)
   );
