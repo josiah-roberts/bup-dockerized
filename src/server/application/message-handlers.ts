@@ -235,7 +235,11 @@ export const messageHandlers: {
 
     for (const backup of backups) {
       setStatus(backup, { status: "working" });
-      await gc(backup);
+      try {
+        await gc(backup);
+      } catch (e) {
+        console.error(e);
+      }
       setStatus(backup, { status: "idle" });
       await recomputeStatus(backup);
     }
@@ -248,7 +252,11 @@ export const messageHandlers: {
 
     for (const backup of backups) {
       setStatus(backup, { status: "working" });
-      await prune(backup);
+      try {
+        await prune(backup);
+      } catch (e) {
+        console.error(e);
+      }
       const dates = await getBranchRevisions(backup);
       if (dates) {
         send(ws, "backup-revisions", {
