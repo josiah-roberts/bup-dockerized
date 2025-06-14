@@ -1,4 +1,5 @@
 import { useCommand } from "../hooks/useCommand";
+import { pruneConfirm } from "../shared-copy";
 
 export function GlobalCleanup() {
   const [prune, p] = useCommand("prune");
@@ -10,12 +11,7 @@ export function GlobalCleanup() {
         <span
           class="pointer"
           onClick={() => {
-            if (
-              confirm(
-                "This operation will prune older backups\n- Today, keep all\n- Last week, keep daily\n- Last year, keep monthly- Keep yearly forever\n\nDo you want to proceed?"
-              )
-            )
-              prune({ all: true });
+            if (confirm(pruneConfirm)) prune({ all: true });
           }}
         >
           <span class="hover-parent-absent">prune older</span> {"\u2702\uFE0F"}

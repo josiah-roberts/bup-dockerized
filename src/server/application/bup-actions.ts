@@ -110,7 +110,7 @@ export async function rename(b: Backup, newName: string) {
   }
 }
 
-export async function checkBranchCommited(b: Backup) {
+export async function checkBranchCommitted(b: Backup) {
   const branch = git(["log", "-1", "--format=%ct", b.name], getBackupDir(b));
   const { stdout, code, error } = await readProcess(branch);
 

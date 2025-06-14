@@ -10,6 +10,7 @@ import { useCommand } from "../hooks/useCommand";
 import { useSubscription } from "../hooks/useSubscription";
 import { useTick } from "../hooks/useTick";
 import filesize from "filesize";
+import { pruneConfirm } from "../shared-copy";
 
 const EditableSpan = AsEditable("span");
 
@@ -67,7 +68,7 @@ export const BackupStatusPanel = ({
   );
 
   const canRunNow = () =>
-    status?.runnability.runnable &&
+    status?.readiness.runnable &&
     (status?.status === "idle" || status?.status === "never-run");
 
   const [revisions, setRevisions] = useState<string[]>([]);
@@ -317,20 +318,20 @@ export const BackupStatusPanel = ({
           {status?.status === "working" && (
             <span class="grey">🚧 working...</span>
           )}
-          {status?.runnability.runnable === false && (
+          {status?.readiness.runnable === false && (
             <span
               class="hint"
               title={
-                "inacessableSources" in status.runnability
-                  ? status.runnability.inacessableSources.join(", ")
+                "inaccessibleSources" in status.readiness
+                  ? status.readiness.inaccessibleSources.join(", ")
                   : undefined
               }
             >
-              {status.runnability.reason.replace("-", " ")}
+              {status.readiness.reason.replace("-", " ")}
             </span>
           )}
           {!canRunNow() &&
-            status?.runnability.runnable &&
+            status?.readiness.runnable &&
             status.status !== "working" && (
               <span>
                 {status.status === "indexing" ? "🔦" : "💾"} {status.status}
@@ -363,12 +364,7 @@ export const BackupStatusPanel = ({
               <span
                 class="pointer"
                 onClick={() => {
-                  if (
-                    confirm(
-                      "This operation will prune older backups\n- Today, keep all\n- Last week, keep daily\n- Last year, keep monthly- Keep yearly forever\n\nDo you want to proceed?"
-                    )
-                  )
-                    prune({ id: backup.id });
+                  if (confirm(pruneConfirm)) prune({ id: backup.id });
                 }}
               >
                 <span class="hover-parent-absent">prune older</span>{" "}

@@ -1,24 +1,24 @@
-export type RunningStatus = "indexing" | "saving"
+export type RunningStatus = "indexing" | "saving";
 
-export type StatusSummary = RunningStatus | "never-run" | "idle" | "working"
-export type Runnability =
+export type StatusSummary = RunningStatus | "never-run" | "idle" | "working";
+export type Readiness =
   | { runnable: true }
-  | { runnable: false; reason: "repo-inaccessable" }
+  | { runnable: false; reason: "repo-inaccessible" }
   | {
-      runnable: false
-      reason: "sources-inaccessable"
-      inacessableSources: string[]
-    }
+      runnable: false;
+      reason: "sources-inaccessible";
+      inaccessibleSources: string[];
+    };
 
 export type BackupStatus = {
-  backupId: string
-  repoAccessable: boolean
+  backupId: string;
+  repoAccessible: boolean;
   sourceStatus: {
-    source: string
-    accessable: boolean
-  }[]
-  runnability: Runnability
-  lastRun: Date | undefined
-  branchSize: number | undefined
-  status: StatusSummary
-}
+    source: string;
+    accessible: boolean;
+  }[];
+  readiness: Readiness;
+  lastRun: Date | undefined;
+  branchSize: number | undefined;
+  status: StatusSummary;
+};

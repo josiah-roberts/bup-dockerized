@@ -11,7 +11,7 @@ type CommandArg<TKey extends ClientCommandType["type"]> =
 
 export const useCommand = <TKey extends ClientCommandType["type"]>(
   type: TKey
-): [(...comandArgs: CommandArg<TKey>) => void, string] => {
+): [(...commandArgs: CommandArg<TKey>) => void, string] => {
   const channel = useContext(ChannelContext);
   const correlation = useMemo(() => nanoid(), [type]);
 
