@@ -1,101 +1,102 @@
-import { parseExpression } from "cron-parser"
-import formatDistanceToNow from "date-fns/formatDistanceToNow"
-import formatRelative from "date-fns/formatRelative"
-import { useCallback, useEffect, useState } from "preact/hooks"
-import { JSX } from "preact/jsx-runtime"
-import { Backup } from "../../types/config"
-import { BackupStatus } from "../../types/status"
-import { AsEditable } from "../components/AsEditable"
-import { useCommand } from "../hooks/useCommand"
-import { useSubscription } from "../hooks/useSubscription"
-import { useTick } from "../hooks/useTick"
-import filesize from "filesize"
+import { parseExpression } from "cron-parser";
+import formatDistanceToNow from "date-fns/formatDistanceToNow";
+import formatRelative from "date-fns/formatRelative";
+import { useCallback, useEffect, useState } from "preact/hooks";
+import { JSX } from "preact/jsx-runtime";
+import { Backup } from "../../types/config";
+import { BackupStatus } from "../../types/status";
+import { AsEditable } from "../components/AsEditable";
+import { useCommand } from "../hooks/useCommand";
+import { useSubscription } from "../hooks/useSubscription";
+import { useTick } from "../hooks/useTick";
+import filesize from "filesize";
 
-const EditableSpan = AsEditable("span")
+const EditableSpan = AsEditable("span");
 
 const Bar = (props: JSX.IntrinsicElements["span"]) => (
   <span {...props} class="bar" />
-)
+);
 
 const title = (txt: string) =>
-  txt.length > 0 ? txt[0].toUpperCase() + txt.slice(1) : txt
+  txt.length > 0 ? txt[0].toUpperCase() + txt.slice(1) : txt;
 
 export const BackupStatusPanel = ({
   backup,
   rootPath,
 }: {
-  backup: Backup
-  rootPath: string
+  backup: Backup;
+  rootPath: string;
 }) => {
-  const tick = useTick(10_000)
+  const tick = useTick(10_000);
 
-  const [editName, setEditName] = useState(backup.name)
-  const [addPath, setAddPath] = useState("add source")
-  const [editExclude, setEditExclude] = useState(backup.exclude)
+  const [editName, setEditName] = useState(backup.name);
+  const [addPath, setAddPath] = useState("add source");
+  const [editExclude, setEditExclude] = useState(backup.exclude);
 
-  const [editCronline, setEditCronline] = useState(backup.cronLine)
-  const [status, setStatus] = useState<BackupStatus>()
+  const [editCronline, setEditCronline] = useState(backup.cronLine);
+  const [status, setStatus] = useState<BackupStatus>();
 
-  const [runNow, rn] = useCommand("run-now")
-  const [editBackup, eb] = useCommand("edit-backup")
-  const [getStatus, gs] = useCommand("get-backup-status")
-  const [removeBackup, rb] = useCommand("remove-backup")
-  const [garbageCollect, gc] = useCommand("gc")
-  const [prune, p] = useCommand("prune")
+  const [runNow, rn] = useCommand("run-now");
+  const [editBackup, eb] = useCommand("edit-backup");
+  const [getStatus, gs] = useCommand("get-backup-status");
+  const [removeBackup, rb] = useCommand("remove-backup");
+  const [garbageCollect, gc] = useCommand("gc");
+  const [prune, p] = useCommand("prune");
 
   useEffect(() => {
-    getStatus({ id: backup.id })
-  }, [backup.id])
+    getStatus({ id: backup.id });
+  }, [backup.id]);
 
   useSubscription(
     "client-error",
     useCallback(
       (m) => {
-        setEditName(backup.name)
-        setEditCronline(backup.cronLine)
-        setAddPath("add source")
-        alert(m.error)
+        setEditName(backup.name);
+        setEditCronline(backup.cronLine);
+        setAddPath("add source");
+        alert(m.error);
       },
       [eb]
     ),
     eb
-  )
+  );
 
   const nextRun = useCallback(
     (cronLine: string) => parseExpression(cronLine).next().toDate(),
     [tick]
-  )
+  );
 
   const canRunNow = () =>
     status?.runnability.runnable &&
-    (status?.status === "idle" || status?.status === "never-run")
+    (status?.status === "idle" || status?.status === "never-run");
 
-  const [revisions, setRevisions] = useState<string[]>([])
-  const [showRevisions, setShowRevisions] = useState(false)
-  const [stat, st] = useCommand("get-revisions")
-  const [rm, r] = useCommand("remove-revision")
-  const [restore, restoreCorrelation] = useCommand("restore")
+  const [revisions, setRevisions] = useState<string[]>([]);
+  const [showRevisions, setShowRevisions] = useState(false);
+  const [stat, st] = useCommand("get-revisions");
+  const [rm, r] = useCommand("remove-revision");
+  const [restore, restoreCorrelation] = useCommand("restore");
   useSubscription(
     "backup-revisions",
     useCallback(
-      ({ revisions }) => {
-        setRevisions(revisions)
+      ({ revisions, id }) => {
+        if (id === backup.id) {
+          setRevisions(revisions);
+        }
       },
-      [setRevisions]
-    ),
-    [st, r, rn]
-  )
+      [setRevisions, backup.id]
+    )
+  );
 
   useSubscription(
     "client-error",
     useCallback(
       (m) => {
-        alert(m.error)
+        alert(m.error);
       },
       [restoreCorrelation]
     ),
     restoreCorrelation
-  )
+  );
 
   useSubscription(
     "backup-status",
@@ -105,14 +106,14 @@ export const BackupStatusPanel = ({
         // so we need to filter out status changes for other
         // backups
         if (m.status.backupId === backup.id) {
-          setStatus(m.status)
+          setStatus(m.status);
         }
       },
       [rn, gs, eb]
     )
-  )
+  );
 
-  const isRunning = ["indexing", "saving"].includes(status?.status ?? "")
+  const isRunning = ["indexing", "saving"].includes(status?.status ?? "");
 
   return (
     <>
@@ -130,9 +131,9 @@ export const BackupStatusPanel = ({
           onClick={() => {
             const confirmation = confirm(
               `Are you sure you want to remove "${backup.name}"?\n\nThis backup will be disabled, and any executing operations will run to completion.\n\nBackup output at ${rootPath}/${backup.name} will not be removed.`
-            )
+            );
             if (confirmation) {
-              removeBackup({ id: backup.id })
+              removeBackup({ id: backup.id });
             }
           }}
           title="Remove"
@@ -146,9 +147,9 @@ export const BackupStatusPanel = ({
           }}
           onClick={() => {
             if (!showRevisions) {
-              setShowRevisions(true)
-              stat({ id: backup.id })
-            } else setShowRevisions(false)
+              setShowRevisions(true);
+              stat({ id: backup.id });
+            } else setShowRevisions(false);
           }}
           title="Revisions"
         >
@@ -207,8 +208,8 @@ export const BackupStatusPanel = ({
                 onSubmit={(value) => {
                   editBackup({
                     backup: { ...backup, sources: [...backup.sources, value] },
-                  })
-                  setAddPath("add source")
+                  });
+                  setAddPath("add source");
                 }}
                 onReset={() => setAddPath("add source")}
               />
@@ -241,14 +242,14 @@ export const BackupStatusPanel = ({
                 onInput={(value) => setEditExclude(value)}
                 onSubmit={(value) => {
                   try {
-                    new RegExp(value)
+                    new RegExp(value);
                     editBackup({
                       backup: { ...backup, exclude: value || undefined },
-                    })
-                    setEditExclude(value || undefined)
+                    });
+                    setEditExclude(value || undefined);
                   } catch {
-                    alert("Invalid regular expression!")
-                    setEditExclude(backup.exclude)
+                    alert("Invalid regular expression!");
+                    setEditExclude(backup.exclude);
                   }
                 }}
                 onReset={() => setEditExclude(backup.exclude)}
@@ -354,7 +355,7 @@ export const BackupStatusPanel = ({
                       "This operation will prune older backups\n- Today, keep all\n- Last week, keep daily\n- Last year, keep monthly- Keep yearly forever\n\nDo you want to proceed?"
                     )
                   )
-                    prune({ id: backup.id })
+                    prune({ id: backup.id });
                 }}
               >
                 <span class="hover-parent-absent">prune older</span>{" "}
@@ -399,7 +400,7 @@ export const BackupStatusPanel = ({
                             )} (${r})?`
                           )
                         ) {
-                          rm({ id: backup.id, revision: r })
+                          rm({ id: backup.id, revision: r });
                         }
                       }}
                       title="Delete revision"
@@ -411,9 +412,13 @@ export const BackupStatusPanel = ({
                         const path = prompt(
                           "Please provide a sub-path that you want to restore, or leave blank to restore the entire backup.",
                           ""
-                        )
+                        );
                         if (path !== null) {
-                          restore({ id: backup.id, revision: r, subpath: path })
+                          restore({
+                            id: backup.id,
+                            revision: r,
+                            subpath: path,
+                          });
                         }
                       }}
                       title="Restore revision"
@@ -429,5 +434,5 @@ export const BackupStatusPanel = ({
         </div>
       )}
     </>
-  )
-}
+  );
+};
