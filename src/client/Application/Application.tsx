@@ -4,10 +4,10 @@ import { useOpened } from "../hooks/useOpened";
 import { useCommand } from "../hooks/useCommand";
 import { Config } from "../../types/config";
 import { ServerMessage } from "../../types/commands";
-import { BackupsList } from "./BackupsList";
 import { useSubscription } from "../hooks/useSubscription";
 import { AddNewBackup } from "./AddNewBackup";
 import { GlobalCleanup } from "./GlobalCleanup";
+import { BackupStatusPanel } from "./BackupStatus";
 
 export const Application = () => {
   const [config, setConfig] = useState<Config>();
@@ -32,16 +32,18 @@ export const Application = () => {
 
   return (
     <>
-      <div
-        class="card row"
-        style={{
-          paddingTop: "0.8em",
-        }}
-      >
+      <div class="card row">
         <AddNewBackup />
-        {config?.backups.length && <GlobalCleanup />}
+        {!!config?.backups.length && <GlobalCleanup />}
       </div>
-      {config && config.backups.length > 0 && <BackupsList config={config} />}
+      {!!config?.backups.length &&
+        config.backups.map((backup, i) => (
+          <BackupStatusPanel
+            key={backup.id}
+            backup={backup}
+            rootPath={config.rootPath}
+          />
+        ))}
     </>
   );
 };

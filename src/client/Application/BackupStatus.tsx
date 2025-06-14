@@ -115,8 +115,21 @@ export const BackupStatusPanel = ({
 
   const isRunning = ["indexing", "saving"].includes(status?.status ?? "");
 
+  const shimmerClass =
+    status?.status === "indexing" || status?.status === "saving"
+      ? "shimmer-left-saving"
+      : status?.status === "working"
+      ? "shimmer-left-working"
+      : "";
+
   return (
-    <>
+    <div
+      class={`card row ${shimmerClass}`}
+      style={{
+        boxSizing: "content-box",
+        position: "relative",
+      }}
+    >
       <div
         style={{
           position: "relative",
@@ -433,6 +446,6 @@ export const BackupStatusPanel = ({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };

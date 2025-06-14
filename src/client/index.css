@@ -118,3 +118,60 @@ ul.sources-list {
 *::-webkit-scrollbar-track {
   background: #292929;
 }
+
+.shimmer-left-saving::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -6px;
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    #059669 0%,
+    #10b981 20%,
+    #34d399 35%,
+    #6ee7b7 50%,
+    #34d399 65%,
+    #10b981 80%,
+    #059669 100%
+  );
+  background-size: 100% 300%;
+  animation: shimmer-vertical 1.5s ease-in-out infinite;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+@keyframes shimmer-vertical {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 -300%;
+  }
+}
+
+.shimmer-left-working::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -6px;
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    #ca8a04 0%,
+    #eab308 20%,
+    #facc15 35%,
+    #fef3c7 50%,
+    #facc15 65%,
+    #eab308 80%,
+    #ca8a04 100%
+  );
+  background-size: 100% 300%;
+  animation: shimmer-vertical 1.5s ease-in-out infinite;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
