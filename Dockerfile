@@ -1,4 +1,4 @@
-FROM node:21-slim AS git-builder
+FROM node:24-slim AS git-builder
 RUN apt-get update && apt-get install --no-install-recommends -y \
   gettext build-essential git autoconf libz-dev libssl-dev libcurl4-gnutls-dev libexpat1-dev \
   && rm -rf /var/lib/apt/lists/*
@@ -20,11 +20,11 @@ COPY ./package-lock.json /usr/app/package-lock.json
 
 RUN npm install
 
-FROM node:21-slim
+FROM node:24-slim
 
-RUN apt-get update && apt-get install --no-install-recommends bup -y && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install --no-install-recommends -y bup \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/app
 
