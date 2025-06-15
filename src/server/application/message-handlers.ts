@@ -28,6 +28,7 @@ import {
 import { emit } from "./events";
 import { getStatus, recomputeStatus, setStatus } from "./status-repository";
 import { run } from "./run";
+import { Backup } from "../../types/config";
 
 export type MessageContainer<T extends ClientCommandType["type"]> = {
   message: ClientCommand<T>;
@@ -105,7 +106,10 @@ export const messageHandlers: {
       return;
     }
 
-    if (!cronIsValid(message.backup.cronLine)) {
+    if (
+      message.backup.type !== "monitoring" &&
+      !cronIsValid(message.backup.cronLine)
+    ) {
       send(ws, "client-error", {
         error: `Invalid cron line`,
       });
@@ -161,10 +165,11 @@ export const messageHandlers: {
       return;
     }
 
-    if (!cronIsValid(message.backup.cronLine)) {
-      send(ws, "client-error", {
-        error: `Invalid cron line`,
-      });
+    if (
+      message.backup.type !== "monitoring" &&
+      !cronIsValid(message.backup.cronLine)
+    ) {
+      clientError(`Invalid cron line`, ws);
       return;
     }
 
@@ -180,6 +185,7 @@ export const messageHandlers: {
     });
 
     await recomputeStatus(message.backup);
+
     emit("config");
   },
   "run-now": async ({ message }, ws) => {
@@ -187,7 +193,11 @@ export const messageHandlers: {
     const backup = config.backups.find((x) => x.id === message.id);
     if (!backup) return;
 
-    await run(backup);
+    if (backup.type === "monitoring") {
+      clientError("Cannot run monitoring backups", ws);
+    }
+
+    await run(backup as Exclude<Backup, { type: "monitoring" }>);
     const dates = await getBranchRevisions(backup);
     if (dates) {
       send(ws, "backup-revisions", {

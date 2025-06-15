@@ -1,4 +1,9 @@
-import { Backup, Config } from "../../types/config";
+import {
+  Backup,
+  Config,
+  isAutomatic as isAutomatic,
+  RunnableBackup,
+} from "../../types/config";
 import { run } from "./run";
 import { CronJob } from "cron";
 import { emit } from "./events";
@@ -9,7 +14,7 @@ const tasks: Record<
   { job: CronJob; donePromise: Promise<void> } | undefined
 > = {};
 
-const backupRunner = (b: Backup) => async () => {
+const backupRunner = (b: RunnableBackup) => async () => {
   console.info(`Cron schedule fired for for ${b.name}`);
 
   const executingTask = tasks[b.id];
@@ -39,7 +44,7 @@ const backupRunner = (b: Backup) => async () => {
 };
 
 export function maintainRunners(config: Config) {
-  for (const b of config.backups) {
+  for (const b of config.backups.filter(isAutomatic)) {
     const existingTask = tasks[b.id];
     if (existingTask) {
       const stopOnDone = existingTask.donePromise.finally(() => {
@@ -67,8 +72,17 @@ export function maintainRunners(config: Config) {
   }
 
   for (const [id, task] of Object.entries(tasks)) {
-    if (id && task && !config.backups.some((b) => b.id === id)) {
+    if (!id || !task) {
+      continue;
+    }
+    const backup = config.backups.find((b) => b.id === id);
+    if (!backup) {
       console.info(`Stopping backup because it has been removed ${id}`);
+      task.job.stop();
+    } else if (!isAutomatic(backup)) {
+      console.info(
+        `Stopping backup because it has been changed to monitoring ${id}`
+      );
       task.job.stop();
     }
   }

@@ -3,7 +3,7 @@ import formatDistanceToNow from "date-fns/formatDistanceToNow";
 import formatRelative from "date-fns/formatRelative";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import { JSX } from "preact/jsx-runtime";
-import { Backup } from "../../types/config";
+import { Backup, isAutomatic } from "../../types/config";
 import { BackupStatus } from "../../types/status";
 import { AsEditable } from "../components/AsEditable";
 import { useCommand } from "../hooks/useCommand";
@@ -32,9 +32,17 @@ export const BackupStatusPanel = ({
 
   const [editName, setEditName] = useState(backup.name);
   const [addPath, setAddPath] = useState("add source");
-  const [editExclude, setEditExclude] = useState(backup.exclude);
+  const [editExclude, setEditExclude] = useState(
+    isAutomatic(backup) ? backup.exclude : undefined
+  );
 
-  const [editCronline, setEditCronline] = useState(backup.cronLine);
+  const [editCronline, setEditCronline] = useState(
+    isAutomatic(backup) ? backup.cronLine : undefined
+  );
+  if (editCronline === undefined && backup.cronLine !== undefined) {
+    setEditCronline(backup.cronLine);
+  }
+
   const [status, setStatus] = useState<BackupStatus>();
 
   const [runNow, rn] = useCommand("run-now");
@@ -53,7 +61,9 @@ export const BackupStatusPanel = ({
     useCallback(
       (m) => {
         setEditName(backup.name);
-        setEditCronline(backup.cronLine);
+        if (isAutomatic(backup)) {
+          setEditCronline(backup.cronLine);
+        }
         setAddPath("add source");
         alert(m.error);
       },
@@ -114,6 +124,26 @@ export const BackupStatusPanel = ({
     )
   );
 
+  const toMonitoring = () => {
+    editBackup({
+      backup: {
+        ...backup,
+        type: "monitoring",
+      },
+    });
+  };
+
+  const toAutomatic = () => {
+    editBackup({
+      backup: {
+        ...backup,
+        type: "automatic",
+        cronLine: backup.cronLine ?? "0 0 * * *",
+        sources: backup.sources ?? [],
+      },
+    });
+  };
+
   const isRunning = ["indexing", "saving"].includes(status?.status ?? "");
 
   const shimmerClass =
@@ -129,6 +159,7 @@ export const BackupStatusPanel = ({
       style={{
         boxSizing: "content-box",
         position: "relative",
+        minHeight: "3rem",
       }}
     >
       <div
@@ -154,21 +185,23 @@ export const BackupStatusPanel = ({
         >
           <span class="hover-parent-absent">remove</span> ❌
         </button>
-        <button
-          class="right-btn"
-          style={{
-            top: "1.6em",
-          }}
-          onClick={() => {
-            if (!showRevisions) {
-              setShowRevisions(true);
-              stat({ id: backup.id });
-            } else setShowRevisions(false);
-          }}
-          title="Revisions"
-        >
-          <span class="hover-parent-absent">revisions</span> 📜
-        </button>
+        {status && status?.status !== "never-run" && (
+          <button
+            class="right-btn"
+            style={{
+              top: "1.6em",
+            }}
+            onClick={() => {
+              if (!showRevisions) {
+                setShowRevisions(true);
+                stat({ id: backup.id });
+              } else setShowRevisions(false);
+            }}
+            title="Revisions"
+          >
+            <span class="hover-parent-absent">revisions</span> 📜
+          </button>
+        )}
 
         <div style={{ flexGrow: 1, maxWidth: "100%" }}>
           <h3 style={{ marginBottom: 0, marginTop: "0.25em" }}>
@@ -192,152 +225,193 @@ export const BackupStatusPanel = ({
               </span>
             </>
           )}
-          <ul class="sources-list">
-            {backup.sources.map((source) => (
-              <li key={source}>
-                <span class="grey">{source} </span>
-                <span
+          {isAutomatic(backup) && (
+            <ul class="sources-list">
+              {backup.sources.map((source) => (
+                <li key={source}>
+                  <span class="grey">{source} </span>
+                  <span
+                    class="small pointer"
+                    onClick={() =>
+                      editBackup({
+                        backup: {
+                          ...backup,
+                          sources: backup.sources.filter((x) => x !== source),
+                        },
+                      })
+                    }
+                  >
+                    remove
+                  </span>
+                </li>
+              ))}
+              {backup.sources.length === 0 && (
+                <li class="grey italic">no sources</li>
+              )}
+              <li>
+                <EditableSpan
                   class="small pointer"
-                  onClick={() =>
+                  value={addPath}
+                  onInput={(value) => setAddPath(value)}
+                  onSubmit={(value) => {
                     editBackup({
                       backup: {
                         ...backup,
-                        sources: backup.sources.filter((x) => x !== source),
+                        sources: [...backup.sources, value],
                       },
-                    })
-                  }
-                >
-                  remove
-                </span>
-              </li>
-            ))}
-            {backup.sources.length === 0 && (
-              <li class="grey italic">no sources</li>
-            )}
-            <li>
-              <EditableSpan
-                class="small pointer"
-                value={addPath}
-                onInput={(value) => setAddPath(value)}
-                onSubmit={(value) => {
-                  editBackup({
-                    backup: { ...backup, sources: [...backup.sources, value] },
-                  });
-                  setAddPath("add source");
-                }}
-                onReset={() => setAddPath("add source")}
-              />
-            </li>
-            <li style={{ marginTop: "0.5em" }}>
-              {backup.exclude && (
-                <div
-                  class="grey"
-                  style={{ display: "inline-block", verticalAlign: "top" }}
-                >
-                  <span class="hint" title="RegEx matched against entire path">
-                    excluding
-                  </span>
-                  : /
-                </div>
-              )}
-              <EditableSpan
-                style={{
-                  textOverflow: "ellipsis",
-                  whiteSpace: "wrap",
-                  wordBreak: "anywhere",
-                  maxWidth: "calc(100% - 10em)",
-                  display: "inline-block",
-                  overflow: "hidden",
-                  verticalAlign: "bottom",
-                }}
-                title={editExclude}
-                class={!backup.exclude ? "small pointer" : "pointer"}
-                value={editExclude ?? "add exclusion regex"}
-                onInput={(value) => setEditExclude(value)}
-                onSubmit={(value) => {
-                  try {
-                    new RegExp(value);
-                    editBackup({
-                      backup: { ...backup, exclude: value || undefined },
                     });
-                    setEditExclude(value || undefined);
-                  } catch {
-                    alert("Invalid regular expression!");
-                    setEditExclude(backup.exclude);
-                  }
-                }}
-                onReset={() => setEditExclude(backup.exclude)}
-              />
-              {backup.exclude && <span class="grey">/</span>}
-            </li>
-          </ul>
+                    setAddPath("add source");
+                  }}
+                  onReset={() => setAddPath("add source")}
+                />
+              </li>
+              <li style={{ marginTop: "0.5em" }}>
+                {backup.exclude && (
+                  <div
+                    class="grey"
+                    style={{ display: "inline-block", verticalAlign: "top" }}
+                  >
+                    <span
+                      class="hint"
+                      title="RegEx matched against entire path"
+                    >
+                      excluding
+                    </span>
+                    : /
+                  </div>
+                )}
+                <EditableSpan
+                  style={{
+                    textOverflow: "ellipsis",
+                    whiteSpace: "wrap",
+                    wordBreak: "anywhere",
+                    maxWidth: "calc(100% - 10em)",
+                    display: "inline-block",
+                    overflow: "hidden",
+                    verticalAlign: "bottom",
+                  }}
+                  title={editExclude}
+                  class={!backup.exclude ? "small pointer" : "pointer"}
+                  value={editExclude ?? "add exclusion regex"}
+                  onInput={(value) => setEditExclude(value)}
+                  onSubmit={(value) => {
+                    try {
+                      new RegExp(value);
+                      editBackup({
+                        backup: { ...backup, exclude: value || undefined },
+                      });
+                      setEditExclude(value || undefined);
+                    } catch {
+                      alert("Invalid regular expression!");
+                      setEditExclude(backup.exclude);
+                    }
+                  }}
+                  onReset={() => setEditExclude(backup.exclude)}
+                />
+                {backup.exclude && <span class="grey">/</span>}
+              </li>
+            </ul>
+          )}
         </div>
-        <div>
-          <EditableSpan
-            onSubmit={(value) =>
-              editBackup({ backup: { ...backup, cronLine: value } })
-            }
-            onInput={(value) => setEditCronline(value)}
-            onReset={() => setEditCronline(backup.cronLine)}
-            value={editCronline}
-          />
-          <Bar class="grey" />
-          <span class="grey">
-            {status?.lastRun ? (
-              <>
-                <span>ran </span>
-                <span
-                  class="hint"
-                  title={new Date(status.lastRun).toLocaleString()}
-                >
-                  {formatDistanceToNow(new Date(status.lastRun))} ago
-                </span>
-              </>
-            ) : (
-              "never run"
-            )}
-          </span>
-          <Bar class="grey" />
-          <span class="grey">running in </span>
-          <span
-            class="hint"
-            style={{ color: "Darkgrey" }}
-            title={nextRun(backup.cronLine).toLocaleString()}
-          >
-            {formatDistanceToNow(nextRun(backup.cronLine))}
-          </span>
-          <Bar />
-          {canRunNow() && (
-            <>
-              <span>🏃 </span>
-              <span class="pointer" onClick={() => runNow({ id: backup.id })}>
-                run now
-              </span>
-            </>
-          )}
-          {status?.status === "working" && (
-            <span class="grey">🚧 working...</span>
-          )}
-          {status?.readiness.runnable === false && (
+        {isAutomatic(backup) && editCronline !== undefined && (
+          <div>
+            <EditableSpan
+              onSubmit={(value) =>
+                editBackup({ backup: { ...backup, cronLine: value } })
+              }
+              onInput={(value) => setEditCronline(value)}
+              onReset={() => setEditCronline(backup.cronLine)}
+              value={editCronline}
+            />
+            <Bar class="grey" />
+            <span class="grey">
+              {status?.lastRun ? (
+                <>
+                  <span>ran </span>
+                  <span
+                    class="hint"
+                    title={new Date(status.lastRun).toLocaleString()}
+                  >
+                    {formatDistanceToNow(new Date(status.lastRun))} ago
+                  </span>
+                </>
+              ) : (
+                "never run"
+              )}
+            </span>
+            <Bar class="grey" />
+            <span class="grey">running in </span>
             <span
               class="hint"
-              title={
-                "inaccessibleSources" in status.readiness
-                  ? status.readiness.inaccessibleSources.join(", ")
-                  : undefined
-              }
+              style={{ color: "Darkgrey" }}
+              title={nextRun(backup.cronLine).toLocaleString()}
             >
-              {status.readiness.reason.replace("-", " ")}
+              {formatDistanceToNow(nextRun(backup.cronLine))}
             </span>
-          )}
-          {!canRunNow() &&
-            status?.readiness.runnable &&
-            status.status !== "working" && (
-              <span>
-                {status.status === "indexing" ? "🔦" : "💾"} {status.status}
+            <Bar />
+            <span>💤 </span>
+            <span class={"pointer"} onClick={toMonitoring}>
+              switch to monitoring
+            </span>
+            <Bar />
+            {canRunNow() && (
+              <>
+                <span>🏃 </span>
+                <span class="pointer" onClick={() => runNow({ id: backup.id })}>
+                  run now
+                </span>
+              </>
+            )}
+            {status?.status === "working" && (
+              <span class="grey">🚧 working...</span>
+            )}
+            {status?.readiness.runnable === false && (
+              <span
+                class="hint"
+                title={
+                  "inaccessibleSources" in status.readiness
+                    ? status.readiness.inaccessibleSources.join(", ")
+                    : undefined
+                }
+              >
+                {status.readiness.reason.replace("-", " ")}
               </span>
             )}
-        </div>
+            {!canRunNow() &&
+              status?.readiness.runnable &&
+              status.status !== "working" && (
+                <span>
+                  {status.status === "indexing" ? "🔦" : "💾"} {status.status}
+                </span>
+              )}
+          </div>
+        )}
+        {!isAutomatic(backup) && (
+          <div>
+            <span class="grey">monitoring</span>
+            <Bar />
+            <span class="grey">
+              {status?.lastRun ? (
+                <>
+                  <span>ran </span>
+                  <span
+                    class="hint"
+                    title={new Date(status.lastRun).toLocaleString()}
+                  >
+                    {formatDistanceToNow(new Date(status.lastRun))} ago
+                  </span>
+                </>
+              ) : (
+                "never run"
+              )}
+            </span>
+            <Bar />
+            <span>⚡ </span>
+            <span class="pointer" onClick={toAutomatic}>
+              switch to automatic
+            </span>
+          </div>
+        )}
         {showRevisions && (
           <>
             <div

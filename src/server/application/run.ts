@@ -7,7 +7,7 @@ import {
   setRunningStatus,
 } from "./status-repository";
 
-export async function run(b: Backup) {
+export async function run(b: Exclude<Backup, { type: "monitoring" }>) {
   const status = await getStatus(b);
   if (!status.readiness.runnable) {
     emit(

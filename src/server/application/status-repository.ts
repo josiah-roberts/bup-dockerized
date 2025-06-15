@@ -49,12 +49,15 @@ function getInitialStatusSummary(lastRun: Date | undefined) {
 
 async function rebuildStatus(backup: Backup): Promise<BackupStatus> {
   const repoAccessible = await isAccessibleDir(getBackupDir(backup));
-  const sourceStatus = await Promise.all(
-    backup.sources.map(async (source) => ({
-      source,
-      accessible: await isAccessibleDir(source),
-    }))
-  );
+  const sourceStatus =
+    backup.type !== "monitoring"
+      ? await Promise.all(
+          backup.sources.map(async (source) => ({
+            source,
+            accessible: await isAccessibleDir(source),
+          }))
+        )
+      : [];
   const lastRun = await checkBranchCommitted(backup);
   const branchSize = await checkBranchBytes(backup);
 

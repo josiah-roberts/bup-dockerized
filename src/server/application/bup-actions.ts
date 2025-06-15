@@ -1,4 +1,4 @@
-import { Backup } from "../../types/config";
+import { Backup, RunnableBackup } from "../../types/config";
 import {
   spawn,
   SpawnOptionsWithoutStdio,
@@ -72,7 +72,7 @@ export async function initializeRepository(r: string) {
   }
 }
 
-export async function index(b: Backup, source: string) {
+export async function index(b: RunnableBackup, source: string) {
   const args = b.exclude
     ? ["index", "-v", "-v", "--exclude-rx", b.exclude, source]
     : ["index", "-v", "-v", source];
@@ -85,7 +85,7 @@ export async function index(b: Backup, source: string) {
   }
 }
 
-export async function save(b: Backup) {
+export async function save(b: RunnableBackup) {
   const pathPairs = b.sources.map((p, i) => [`BUP_PATH_${i}`, p]);
   const save = bup(
     ["save", "-v", "-v", `--name=${b.name}`, ...pathPairs.map(([, p]) => p)],
