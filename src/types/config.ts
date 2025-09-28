@@ -5,6 +5,7 @@ export type Backup =
       sources: string[];
       id: string;
       exclude?: string;
+      prefix?: string;
       type?: "automatic";
     }
   | {
@@ -14,6 +15,7 @@ export type Backup =
       cronLine?: string;
       sources?: string[];
       exclude?: string;
+      prefix?: string;
     };
 
 export type RunnableBackup = Exclude<Backup, { type: "monitoring" }>;

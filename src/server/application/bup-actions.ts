@@ -5,8 +5,9 @@ import {
   ChildProcessWithoutNullStreams,
 } from "child_process";
 import { getBackupDir, getRestoreDir } from "./config-repository";
-import { rename as fsRename } from "fs/promises";
+import { rename as fsRename, mkdir as fsMkdir } from "fs/promises";
 import { formatDateToRevisionName } from "../utils/format";
+import path from "path";
 
 function bup(args: string[], repo: string, options?: SpawnOptionsWithoutStdio) {
   const spawned = spawn("bup", args, {
@@ -65,6 +66,7 @@ function readProcess(operation: ChildProcessWithoutNullStreams) {
 }
 
 export async function initializeRepository(r: string) {
+  await fsMkdir(r, { recursive: true });
   const init = bup(["init"], r);
   const { stderr, code } = await readProcess(init);
   if (code !== 0) {
@@ -100,13 +102,22 @@ export async function save(b: RunnableBackup) {
 /**
  * Renames the backup's branch name, and moves the backup to a new location
  */
-export async function rename(b: Backup, newName: string) {
-  const mv = git(["branch", "-m", b.name, newName], getBackupDir(b));
-  const { stderr, code } = await readProcess(mv);
-  if (code === 0) {
-    await fsRename(getBackupDir(b), getBackupDir({ ...b, name: newName }));
-  } else {
-    throw new Error(`Failed to rename, code ${code}\n${stderr.join("\n")}`);
+export async function rename(b: Backup, newName?: string, newPrefix?: string) {
+  if (newName && newName !== b.name) {
+    const mv = git(["branch", "-m", b.name, newName], getBackupDir(b));
+    const { stderr, code } = await readProcess(mv);
+    if (code === 0) {
+      await fsRename(getBackupDir(b), getBackupDir({ ...b, name: newName }));
+    } else {
+      throw new Error(`Failed to rename, code ${code}\n${stderr.join("\n")}`);
+    }
+  }
+
+  if (newPrefix && newPrefix !== b.prefix) {
+    await fsMkdir(path.dirname(getBackupDir({ ...b, prefix: newPrefix })), {
+      recursive: true,
+    });
+    await fsRename(getBackupDir(b), getBackupDir({ ...b, prefix: newPrefix }));
   }
 }
 

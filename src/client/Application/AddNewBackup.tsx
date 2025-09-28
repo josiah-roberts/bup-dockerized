@@ -13,12 +13,14 @@ export const AddNewBackup = () => {
       onClick={() => {
         const name = prompt("Backup name:");
         if (name) {
+          const prefix = prompt("Backup prefix (optional, defaults to 'default'):");
           addBackup({
             backup: {
               name,
               sources: [],
               cronLine: "0 0 * * *",
               id: nanoid(),
+              prefix: prefix || undefined,
             },
           });
         }

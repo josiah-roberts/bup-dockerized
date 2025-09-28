@@ -31,6 +31,7 @@ export const BackupStatusPanel = ({
   const tick = useTick(10_000);
 
   const [editName, setEditName] = useState(backup.name);
+  const [editPrefix, setEditPrefix] = useState(backup.prefix);
   const [addPath, setAddPath] = useState("add source");
   const [editExclude, setEditExclude] = useState(
     isAutomatic(backup) ? backup.exclude : undefined
@@ -61,6 +62,7 @@ export const BackupStatusPanel = ({
     useCallback(
       (m) => {
         setEditName(backup.name);
+        setEditPrefix(backup.prefix);
         if (isAutomatic(backup)) {
           setEditCronline(backup.cronLine);
         }
@@ -174,8 +176,9 @@ export const BackupStatusPanel = ({
         <button
           class="right-btn"
           onClick={() => {
+            const prefix = backup.prefix || "default";
             const confirmation = confirm(
-              `Are you sure you want to remove "${backup.name}"?\n\nThis backup will be disabled, and any executing operations will run to completion.\n\nBackup output at ${rootPath}/${backup.name} will not be removed.`
+              `Are you sure you want to remove "${backup.name}"?\n\nThis backup will be disabled, and any executing operations will run to completion.\n\nBackup output at ${rootPath}/${prefix}/${backup.name} will not be removed.`
             );
             if (confirmation) {
               removeBackup({ id: backup.id });
@@ -206,6 +209,15 @@ export const BackupStatusPanel = ({
         <div style={{ flexGrow: 1, maxWidth: "100%" }}>
           <h3 style={{ marginBottom: 0, marginTop: "0.25em" }}>
             <span class="grey">{rootPath}/</span>
+            <EditableSpan
+              onSubmit={(value) =>
+                editBackup({ backup: { ...backup, prefix: value || undefined } })
+              }
+              onInput={(value) => setEditPrefix(value)}
+              onReset={() => setEditPrefix(backup.prefix)}
+              value={editPrefix || "default"}
+            />
+            <span class="grey">/</span>
             <EditableSpan
               onSubmit={(value) =>
                 editBackup({ backup: { ...backup, name: value } })

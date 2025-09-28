@@ -173,8 +173,11 @@ export const messageHandlers: {
       return;
     }
 
-    if (message.backup.name !== backup.name) {
-      await rename(backup, message.backup.name);
+    if (
+      message.backup.name !== backup.name ||
+      message.backup.prefix !== backup.prefix
+    ) {
+      await rename(backup, message.backup.name, message.backup.prefix);
     }
 
     await setConfig({

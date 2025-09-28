@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "fs/promises"
 import { once, sortBy } from "ramda"
 import assert from "assert"
+import path from "path"
 import { Backup, Config } from "../../types/config"
 import { addShutdownTask } from "../utils/shutdown"
 import { defaultBackupsPath, defaultConfigPath } from "../utils/check-env"
@@ -22,9 +23,16 @@ export const getBackupsDir = () => {
   return backupsDir
 }
 
-export const getBackupDir = (b: Backup) => `${getBackupsDir()}/${b.name}`
-export const getRestoreDir = (b: Backup) =>
-  `${getBackupsDir()}/bup_restore_${b.name}`
+export const getBackupDir = (b: Backup) => {
+  const prefix = b.prefix || "default"
+  const safeName = path.basename(b.name)
+  const safePrefix = path.basename(prefix)
+  return path.join(getBackupsDir(), safePrefix, safeName)
+}
+export const getRestoreDir = (b: Backup) => {
+  const safeName = path.basename(b.name)
+  return path.join(getBackupsDir(), `bup_restore_${safeName}`)
+}
 
 let inMemoryConfig: Config | undefined
 const loadConfig = once(() =>
