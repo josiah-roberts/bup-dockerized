@@ -35,6 +35,11 @@ function du(args: string[], options?: SpawnOptionsWithoutStdio) {
   return spawned;
 }
 
+// Verbose operations (e.g. `bup index -v -v`) emit one line per file, which
+// can run into the millions; keep only the tail so joining for error
+// reporting can't exceed V8's max string length.
+const MAX_RETAINED_LINES = 10_000;
+
 function readProcess(operation: ChildProcessWithoutNullStreams) {
   const stdout: string[] = [];
   const stderr: string[] = [];
@@ -43,6 +48,9 @@ function readProcess(operation: ChildProcessWithoutNullStreams) {
     const lines: string[] = input.toString().split("\n");
     lines.forEach((l) => console.info(`  ${l}`));
     dataArray.push(...lines);
+    if (dataArray.length > MAX_RETAINED_LINES) {
+      dataArray.splice(0, dataArray.length - MAX_RETAINED_LINES);
+    }
   };
 
   operation.stdout.on("data", streamHandler(stdout));
